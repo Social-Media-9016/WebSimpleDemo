@@ -1,0 +1,137 @@
+.home-container {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.home-content {
+  width: 100%;
+}
+
+.home-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-card, .about-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1rem;
+}
+
+.profile-avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.profile-card h3 {
+  margin: 0 0 0.5rem;
+  color: var(--primary-color);
+}
+
+.profile-card p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.about-card h3 {
+  margin: 0 0 1rem;
+  color: var(--primary-color);
+}
+
+.about-card p {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .home-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .home-sidebar {
+    order: -1;
+  }
+}
+
+/* Add these styles to Home.css */
+.guest-banner {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.guest-banner h2 {
+  color: #4F2683;
+  margin-bottom: 0.5rem;
+}
+
+.guest-banner a {
+  color: #4F2683;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.guest-banner a:hover {
+  text-decoration: underline;
+}
+
+.guest-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.guest-card h3 {
+  color: #4F2683;
+  margin-bottom: 0.5rem;
+}
+
+.guest-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.guest-actions .btn {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+} 
