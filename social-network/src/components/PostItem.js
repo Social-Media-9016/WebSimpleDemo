@@ -1,180 +1,218 @@
-import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+import { FaThumbsUp, FaComment, FaEllipsisV, FaTrash, FaEdit, FaShareAlt, FaBookmark } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { toggleLike, deletePost } from '../services/postService';
-import { formatDistanceToNow } from 'date-fns';
+import { getUserProfile } from '../services/userService';
 import CommentSection from './CommentSection';
 import './PostItem.css';
 
 function PostItem({ post, onUpdate, onDelete }) {
+  const { currentUser } = useAuth();
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [showComments, setShowComments] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState('');
-  const { currentUser, isGuest } = useAuth();
-  const navigate = useNavigate();
-  
-  // Handle timestamp display
-  const formatTimestamp = (timestamp) => {
-    try {
-      if (!timestamp) return 'Just now';
-      
-      // Handle various timestamp formats
-      let date;
-      if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-        date = timestamp.toDate();
-      } else if (timestamp.seconds) {
-        date = new Date(timestamp.seconds * 1000);
-      } else if (timestamp instanceof Date) {
-        date = timestamp;
-      } else {
-        date = new Date(timestamp);
-      }
-      
-      // Validate date is valid
-      if (isNaN(date.getTime())) {
-        return 'Just now';
-      }
-      
-      return formatDistanceToNow(date, { addSuffix: true });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Just now';
-    }
-  };
+  const [showMenu, setShowMenu] = useState(false);
+  const [authorProfile, setAuthorProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
 
-  // Handle guest interactions
-  const handleGuestInteraction = () => {
-    if (window.confirm('You need to be logged in to interact with posts. Would you like to login now?')) {
-      navigate('/login');
-    }
-  };
+  // Fetch author profile and set initial likes state
+  useEffect(() => {
+    const fetchAuthorData = async () => {
+      try {
+        const profile = await getUserProfile(post.userId);
+        setAuthorProfile(profile);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
 
-  // Handle like/unlike
+    fetchAuthorData();
+
+    // Set initial likes
+    if (post.likes) {
+      // Check if likes is an array
+      const likeCount = Array.isArray(post.likes) ? post.likes.length : Object.keys(post.likes).length;
+      const hasLiked = Array.isArray(post.likes) ? post.likes.includes(currentUser.uid) : post.likes[currentUser.uid] === true;
+      setLikeCount(likeCount);
+      setLiked(hasLiked);
+    }
+  }, [post, currentUser.uid]);
+
   const handleLike = async () => {
-    if (isGuest()) {
-      handleGuestInteraction();
-      return;
-    }
+    if (isLoading) return;
     
+    setIsLoading(true);
     try {
       const updatedPost = await toggleLike(post.id, currentUser.uid);
-      if (onUpdate) {
-        onUpdate(updatedPost);
-      }
+      
+      // Check if likes is an array
+      const newLikes = Array.isArray(updatedPost.likes) 
+        ? (liked ? updatedPost.likes.filter(id => id !== currentUser.uid) : [...updatedPost.likes, currentUser.uid])
+        // If likes is an object
+        : (liked ? { ...updatedPost.likes, [currentUser.uid]: false } : { ...updatedPost.likes, [currentUser.uid]: true });
+      
+      // Update the post in parent component
+      onUpdate(updatedPost);
     } catch (error) {
-      setError('Failed to update like');
-      console.error(error);
+      console.error('Error toggling like:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle post deletion
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this post?')) {
       try {
-        setIsDeleting(true);
         await deletePost(post.id);
-        if (onDelete) {
-          onDelete(post.id);
-        }
+        onDelete(post.id);
       } catch (error) {
-        setError('Failed to delete post');
-        console.error(error);
-      } finally {
-        setIsDeleting(false);
+        console.error('Error deleting post:', error);
       }
     }
   };
 
-  // Handle comments toggle
-  const toggleComments = () => {
-    if (isGuest()) {
-      handleGuestInteraction();
-      return;
-    }
-    
-    setError('');
+  const handleToggleComments = () => {
     setShowComments(!showComments);
   };
 
-  // Check if current user liked the post
-  const isLiked = !isGuest() && post.likes && post.likes.includes(currentUser.uid);
-  
-  // Check if current user is the author
-  const isAuthor = !isGuest() && post.userId === currentUser.uid;
+  const handleMenuClick = (e) => {
+    e.stopPropagation();
+    setShowMenu(!showMenu);
+  };
 
-  // Handle comment count change
-  const handleCommentCountChange = useCallback((count) => {
-    if (onUpdate && post.commentCount !== count) {
-      onUpdate({ ...post, commentCount: count });
+  const handleBookmark = () => {
+    setBookmarked(!bookmarked);
+    // Future implementation: save bookmark to user profile
+  };
+
+  const handleShare = () => {
+    // Future implementation: share functionality
+    alert('Share feature will be implemented in future updates');
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '';
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return format(date, 'MMM d, yyyy • h:mm a');
+  };
+
+  const renderUserAvatar = () => {
+    if (authorProfile && authorProfile.photoURL) {
+      return (
+        <img 
+          src={authorProfile.photoURL} 
+          alt={authorProfile.displayName} 
+          className="post-user-avatar" 
+        />
+      );
     }
-  }, [post, onUpdate]);
+    
+    return (
+      <div className="post-user-avatar-placeholder">
+        {authorProfile && authorProfile.displayName 
+          ? authorProfile.displayName.charAt(0).toUpperCase() 
+          : 'U'}
+      </div>
+    );
+  };
 
   return (
-    <div className="post-item">
-      {error && <div className="alert alert-error">{error}</div>}
-      
+    <div className="post animate-slide-up">
       <div className="post-header">
-        <div className="post-user-info">
-          {post.userPhotoURL ? (
-            <img 
-              src={post.userPhotoURL} 
-              alt={post.userName} 
-              className="post-avatar" 
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.style.display = 'none';
-                e.target.nextElementSibling.style.display = 'flex';
-              }}
-            />
-          ) : (
-            <div className="post-avatar-placeholder">
-              {post.userName.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div>
-            <h4 className="post-username">{post.userName}</h4>
-            <p className="post-time">{formatTimestamp(post.createdAt)}</p>
-          </div>
+        <div className="post-avatar-wrapper">
+          {renderUserAvatar()}
         </div>
-        
-        {isAuthor && (
-          <button 
-            className="post-delete-btn" 
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? '...' : '✕'}
-          </button>
+        <div className="post-user-info">
+          <Link to={`/profile/${post.userId}`} className="post-author">
+            {authorProfile ? authorProfile.displayName : 'User'}
+          </Link>
+          <span className="post-date">{formatDate(post.createdAt)}</span>
+        </div>
+        {post.userId === currentUser.uid && (
+          <div className="post-actions">
+            <button 
+              className="post-action-button" 
+              onClick={handleMenuClick}
+              aria-label="Post options"
+            >
+              <FaEllipsisV />
+            </button>
+            {showMenu && (
+              <div className="post-menu">
+                <Link to={`/edit-post/${post.id}`} className="post-menu-item">
+                  <FaEdit style={{ marginRight: '8px' }} />
+                  Edit Post
+                </Link>
+                <button onClick={handleDelete} className="post-menu-item delete">
+                  <FaTrash style={{ marginRight: '8px' }} />
+                  Delete Post
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
       
       <div className="post-content">
-        <p>{post.content}</p>
+        {post.content && <p className="post-text">{post.content}</p>}
+        {post.imageURL && (
+          <div className="post-image-container">
+            <img src={post.imageURL} alt="Post" className="post-image" />
+          </div>
+        )}
       </div>
       
-      <div className="post-actions">
+      <div className="post-stats">
+        {likeCount > 0 && (
+          <div className="post-stat-item">
+            <div className="post-like-indicator">
+              <FaThumbsUp className="post-like-icon" />
+            </div>
+            <span>{likeCount}</span>
+          </div>
+        )}
+        {post.commentCount > 0 && (
+          <div className="post-stat-item post-comment-count" onClick={handleToggleComments}>
+            <span>{post.commentCount} comments</span>
+          </div>
+        )}
+      </div>
+      
+      <div className="post-footer">
         <button 
-          className={`post-action-btn ${isLiked ? 'liked' : ''}`} 
+          className={`post-reaction ${liked ? 'liked' : ''}`} 
           onClick={handleLike}
+          disabled={isLoading}
         >
-          <span className="action-icon">❤️</span>
-          <span>{post.likes ? post.likes.length : 0} Likes</span>
+          <FaThumbsUp className="post-reaction-icon" />
+          <span>{liked ? 'Liked' : 'Like'}</span>
+        </button>
+        
+        <button className="post-reaction" onClick={handleToggleComments}>
+          <FaComment className="post-reaction-icon" />
+          <span>Comment</span>
+        </button>
+        
+        <button className="post-reaction" onClick={handleShare}>
+          <FaShareAlt className="post-reaction-icon" />
+          <span>Share</span>
         </button>
         
         <button 
-          className="post-action-btn" 
-          onClick={toggleComments}
+          className={`post-reaction ${bookmarked ? 'bookmarked' : ''}`} 
+          onClick={handleBookmark}
         >
-          <span className="action-icon">💬</span>
-          <span>{post.commentCount || 0} Comments</span>
+          <FaBookmark className="post-reaction-icon" />
+          <span>{bookmarked ? 'Saved' : 'Save'}</span>
         </button>
       </div>
       
       {showComments && (
-        <CommentSection 
-          postId={post.id} 
-          onCommentCountChange={handleCommentCountChange} 
-        />
+        <CommentSection postId={post.id} />
       )}
     </div>
   );

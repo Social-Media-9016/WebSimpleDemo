@@ -1,40 +1,226 @@
-.post-form-container {
+.post-form {
   background-color: var(--white-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  transition: transform 0.2s ease;
 }
 
-.post-form-container h3 {
-  color: var(--primary-color);
-  margin-bottom: 1rem;
+.post-form:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar, .avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  background: var(--gradient-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
   font-size: 1.25rem;
 }
 
-.post-input {
-  width: 100%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  resize: none;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  transition: border-color 0.3s;
+.user-name {
+  margin: 0;
+  font-weight: 500;
+  color: var(--text-color);
 }
 
-.post-input:focus {
+.form-content {
+  padding: 1.25rem 1.5rem;
+}
+
+.content-input {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.75rem;
+  border: 1px solid var(--light-gray);
+  border-radius: var(--border-radius-md);
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  transition: all var(--transition-fast);
+  margin-bottom: 1rem;
+}
+
+.content-input:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: var(--shadow-focus);
 }
 
-.char-counter {
-  text-align: right;
-  font-size: 0.8rem;
-  color: #666;
-  margin: 0.25rem 0;
+.image-preview-container {
+  margin-top: 1rem;
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
 }
 
-.post-form-container .btn {
-  padding: 0.5rem 1.5rem;
-  margin-top: 0.5rem;
+.image-preview {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: var(--border-radius-md);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.remove-image-btn:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.upload-btn, .emoji-btn {
+  background-color: transparent;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.upload-btn:hover, .emoji-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--primary-color);
+}
+
+.submit-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.625rem 1.5rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.875rem;
+}
+
+.submit-btn:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.emoji-picker {
+  position: absolute;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background-color: white;
+  z-index: 9999;
+}
+
+/* Ensure emoji picker has proper sizing */
+.emoji-picker .EmojiPickerReact {
+  --epr-emoji-size: 24px;
+  --epr-category-label-height: 30px;
+  box-shadow: none !important;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Fix any fixed size issues with emoji-picker-react library */
+.emoji-picker .epr-body {
+  overflow: auto !important;
+  height: 350px !important;
+  padding: 0 !important;
+}
+
+.emoji-picker .epr-emoji-category-label {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: white;
+}
+
+.guest-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-light);
+}
+
+@media (max-width: 768px) {
+  .form-header, .form-content, .form-actions {
+    padding: 1rem;
+  }
+  
+  .content-input {
+    min-height: 80px;
+  }
+  
+  .emoji-picker {
+    position: fixed;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 320px;
+  }
 } 

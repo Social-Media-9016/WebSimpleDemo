@@ -12,10 +12,17 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { saveImage, deleteImage } from './localImageService';
 
 // Create a new post
-export const createPost = async (content, userId, userName, userPhotoURL = null) => {
+export const createPost = async (content, userId, userName, userPhotoURL = null, imageFile = null) => {
   try {
+    // Upload image (if any)
+    let imageData = null;
+    if (imageFile) {
+      imageData = await saveImage(imageFile, 'posts', userId);
+    }
+    
     const post = {
       content,
       userId,
@@ -26,8 +33,21 @@ export const createPost = async (content, userId, userName, userPhotoURL = null)
       commentCount: 0
     };
     
+    // Add image info to post data if available
+    if (imageData) {
+      post.imageURL = imageData.url;
+      post.imagePath = imageData.path;
+    }
+    
     const docRef = await addDoc(collection(db, 'posts'), post);
-    return { id: docRef.id, ...post };
+    
+    // Since serverTimestamp() is created on the server, the client can't get it immediately
+    // So we return a temporary timestamp for frontend display
+    return { 
+      id: docRef.id, 
+      ...post,
+      createdAt: new Date() // Temporary timestamp for immediate display
+    };
   } catch (error) {
     console.error("Error creating post: ", error);
     throw error;
@@ -119,7 +139,22 @@ export const toggleLike = async (postId, userId) => {
 // Delete a post
 export const deletePost = async (postId) => {
   try {
-    await deleteDoc(doc(db, 'posts', postId));
+    // Get post info
+    const postRef = doc(db, 'posts', postId);
+    const postSnap = await getDoc(postRef);
+    
+    if (!postSnap.exists()) {
+      throw new Error("Post not found");
+    }
+    
+    const post = postSnap.data();
+    
+    // Delete image if post has one
+    if (post.imagePath) {
+      await deleteImage(post.imagePath);
+    }
+    
+    await deleteDoc(postRef);
     return true;
   } catch (error) {
     console.error("Error deleting post: ", error);

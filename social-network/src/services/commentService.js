@@ -11,14 +11,21 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { saveImage, deleteImage } from './localImageService';
 import { updateCommentCount } from './postService';
 
 // Create a new comment
-export const createComment = async (postId, content, userId, userName, userPhotoURL = null) => {
+export const createComment = async (postId, content, userId, userName, userPhotoURL = null, imageFile = null) => {
   if (!postId) throw new Error('Post ID is required');
   
   try {
     console.log(`Creating comment: postId=${postId}, userId=${userId}`);
+    
+    // Upload image (if any)
+    let imageData = null;
+    if (imageFile) {
+      imageData = await saveImage(imageFile, 'comments', userId);
+    }
     
     const comment = {
       postId,
@@ -29,6 +36,12 @@ export const createComment = async (postId, content, userId, userName, userPhoto
       createdAt: serverTimestamp()
     };
     
+    // Add image info to comment data if available
+    if (imageData) {
+      comment.imageURL = imageData.url;
+      comment.imagePath = imageData.path;
+    }
+    
     const docRef = await addDoc(collection(db, 'comments'), comment);
     console.log(`Comment created successfully, ID: ${docRef.id}`);
     
@@ -36,7 +49,7 @@ export const createComment = async (postId, content, userId, userName, userPhoto
     await updateCommentCount(postId, 1);
     
     // Since serverTimestamp() is created on the server, the client can't get it immediately
-    // So we return a temporary timestamp for the frontend
+    // So we return a temporary timestamp for frontend display
     return { 
       id: docRef.id, 
       ...comment,
@@ -97,6 +110,11 @@ export const deleteComment = async (commentId) => {
     }
     
     const comment = commentSnap.data();
+    
+    // Delete the image if comment has one
+    if (comment.imagePath) {
+      await deleteImage(comment.imagePath);
+    }
     
     // Delete the comment
     await deleteDoc(commentRef);
