@@ -169,26 +169,28 @@
 }
 
 .emoji-picker {
-  z-index: 9999;
-  box-shadow: var(--shadow-lg);
-  border-radius: var(--border-radius-md);
+  position: absolute;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
   background-color: white;
+  z-index: 9999;
 }
 
-/* 设置emoji picker的合适尺寸 */
+/* Ensure emoji picker has proper sizing */
 .emoji-picker .EmojiPickerReact {
   --epr-emoji-size: 24px;
-  height: auto !important;
-  width: auto !important;
-  min-width: 320px;
+  --epr-category-label-height: 30px;
   box-shadow: none !important;
-  border-radius: var(--border-radius-md);
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-/* 修复emoji-picker-react库中可能存在的固定尺寸问题 */
+/* Fix any fixed size issues with emoji-picker-react library */
 .emoji-picker .epr-body {
   overflow: auto !important;
-  max-height: 350px !important;
+  height: 350px !important;
+  padding: 0 !important;
 }
 
 .emoji-picker .epr-emoji-category-label {
@@ -214,14 +216,11 @@
   }
   
   .emoji-picker {
-    right: 0;
-    left: auto;
-    width: 100%;
+    position: fixed;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%);
+    width: 90%;
     max-width: 320px;
-  }
-  
-  .emoji-picker .EmojiPickerReact {
-    min-width: 280px;
-    width: 100% !important;
   }
 } 

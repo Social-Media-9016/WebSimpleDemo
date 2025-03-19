@@ -15,7 +15,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // 如果是编辑模式，则填充表单
+  // If in edit mode, populate the form
   useEffect(() => {
     if (editingPost) {
       setContent(editingPost.content || '');
@@ -25,7 +25,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
     }
   }, [editingPost]);
 
-  // 处理文本框高度自适应
+  // Handle text area height adaptation
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -44,15 +44,15 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
     const file = e.target.files[0];
     if (!file) return;
     
-    // 验证文件类型
+    // Validate file type
     if (!file.type.match('image.*')) {
-      setError('请选择图片文件');
+      setError('Please select an image file');
       return;
     }
     
-    // 验证文件大小（限制为5MB）
+    // Validate file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError('图片大小不能超过5MB');
+      setError('Image size cannot exceed 5MB');
       return;
     }
     
@@ -77,7 +77,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
     e.preventDefault();
     
     if (!content.trim() && !image && !imagePreviewUrl) {
-      setError('请输入内容或上传图片');
+      setError('Please enter content or upload an image');
       return;
     }
     
@@ -85,7 +85,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
       setIsLoading(true);
       setError('');
       
-      // 模拟上传进度
+      // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress((prevProgress) => {
           const newProgress = prevProgress + (5 + Math.random() * 10);
@@ -94,8 +94,8 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
       }, 300);
       
       if (editingPost) {
-        // 编辑现有帖子的逻辑
-        // 这里假设服务层有updatePost方法
+        // Logic for editing existing post
+        // Assume serviceLayer has updatePost method
         await updatePost(editingPost.id, {
           content: content.trim(),
           imageFile: image,
@@ -107,7 +107,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
         clearInterval(progressInterval);
         setUploadProgress(100);
         
-        // 完成编辑，清理表单
+        // Finish editing, clear form
         setTimeout(() => {
           setContent('');
           setImage(null);
@@ -124,7 +124,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
           }
         }, 1000);
       } else {
-        // 创建新帖子
+        // Create new post
         await addPost({
           content: content.trim(),
           imageFile: image,
@@ -137,7 +137,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
         clearInterval(progressInterval);
         setUploadProgress(100);
         
-        // 清理表单
+        // Clear form
         setTimeout(() => {
           setContent('');
           setImage(null);
@@ -152,14 +152,14 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      setError('发布失败，请稍后重试');
+      setError('Post creation failed, please try again later');
       setIsLoading(false);
       setUploadProgress(0);
     }
   };
 
-  // 获取用户头像或占位符
-  const getUserInitial = () => {
+  // Get user avatar or placeholder
+  const getUserAvatar = () => {
     if (userProfile && userProfile.displayName) {
       return userProfile.displayName.charAt(0).toUpperCase();
     } else if (currentUser && currentUser.email) {
@@ -175,7 +175,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
           <img src={userProfile.photoURL} alt={userProfile.displayName || ''} className="create-post-avatar" />
         ) : (
           <div className="create-post-avatar-placeholder">
-            {getUserInitial()}
+            {getUserAvatar()}
           </div>
         )}
         
@@ -183,7 +183,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
           <textarea
             ref={textareaRef}
             className="create-post-textarea"
-            placeholder={editingPost ? "编辑你的帖子..." : "分享你的想法..."}
+            placeholder={editingPost ? "Edit your post..." : "Share your thoughts..."}
             value={content}
             onChange={handleContentChange}
             disabled={isLoading}
@@ -194,14 +194,14 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
             <div className="create-post-preview">
               <img
                 src={imagePreviewUrl}
-                alt="预览"
+                alt="Preview"
                 className="create-post-image-preview"
               />
               <button
                 type="button"
                 className="create-post-remove-image"
                 onClick={handleRemoveImage}
-                aria-label="移除图片"
+                aria-label="Remove image"
               >
                 <FaTimesCircle />
               </button>
@@ -212,7 +212,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
             <div className="create-post-options">
               <label className="create-post-option" htmlFor="image-upload">
                 <FaImage className="create-post-option-icon" />
-                <span>图片</span>
+                <span>Image</span>
                 <input
                   ref={fileInputRef}
                   id="image-upload"
@@ -230,7 +230,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
               className="create-post-submit"
               disabled={(!content.trim() && !image && !imagePreviewUrl) || isLoading}
             >
-              {editingPost ? '更新' : '发布'}
+              {editingPost ? 'Update' : 'Post'}
               <FaPaperPlane className="create-post-submit-icon" />
             </button>
           </div>
@@ -254,7 +254,7 @@ export default function CreatePost({ onPostCreated, editingPost, onCancelEdit })
                 onClick={onCancelEdit}
                 disabled={isLoading}
               >
-                取消编辑
+                Cancel edit
               </button>
             </div>
           )}

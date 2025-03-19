@@ -20,7 +20,7 @@ export default function Post({ post, onDelete, onUpdate }) {
   const commentInputRef = useRef(null);
   const menuRef = useRef(null);
 
-  // 获取帖子作者信息和点赞状态
+  // Get post author information and like status
   useEffect(() => {
     const fetchAuthorProfile = async () => {
       try {
@@ -33,14 +33,14 @@ export default function Post({ post, onDelete, onUpdate }) {
 
     fetchAuthorProfile();
 
-    // 设置初始点赞状态和数量
+    // Set initial like status and count
     if (post.likes) {
       setLikeCount(Object.keys(post.likes).length);
       setLiked(post.likes[currentUser.uid] === true);
     }
   }, [post, currentUser.uid]);
 
-  // 监听点击事件以关闭菜单
+  // Monitor click event to close menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -54,7 +54,7 @@ export default function Post({ post, onDelete, onUpdate }) {
     };
   }, []);
 
-  // 处理评论输入框高度自适应
+  // Handle comment input height adaptation
   useEffect(() => {
     if (commentInputRef.current) {
       commentInputRef.current.style.height = 'auto';
@@ -62,7 +62,7 @@ export default function Post({ post, onDelete, onUpdate }) {
     }
   }, [commentText]);
 
-  // 加载评论
+  // Load comments
   const loadComments = async () => {
     if (!showComments) {
       try {
@@ -80,7 +80,7 @@ export default function Post({ post, onDelete, onUpdate }) {
     }
   };
 
-  // 处理点赞/取消点赞
+  // Handle like/unlike
   const handleLike = async () => {
     try {
       if (liked) {
@@ -97,7 +97,7 @@ export default function Post({ post, onDelete, onUpdate }) {
     }
   };
 
-  // 处理删除帖子
+  // Handle post deletion
   const handleDelete = async () => {
     try {
       await deletePost(post.id, post.imageUrl);
@@ -107,8 +107,8 @@ export default function Post({ post, onDelete, onUpdate }) {
     }
   };
 
-  // 提交评论
-  const handleSubmitComment = async (e) => {
+  // Submit comment
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
 
@@ -129,32 +129,28 @@ export default function Post({ post, onDelete, onUpdate }) {
     }
   };
 
-  // 获取用户头像或占位符
-  const getUserInitial = (user) => {
-    if (user && user.displayName) {
-      return user.displayName.charAt(0).toUpperCase();
-    } else if (user && user.email) {
-      return user.email.charAt(0).toUpperCase();
+  // Get user avatar or placeholder
+  const getUserAvatar = () => {
+    if (authorProfile?.photoURL) {
+      return authorProfile.photoURL;
+    } else if (authorProfile) {
+      return `https://ui-avatars.com/api/?name=${authorProfile.displayName || authorProfile.email || 'User'}`;
     }
-    return '?';
+    return null;
   };
 
-  // 格式化日期
-  const formatDate = (date) => {
-    if (!date) return '';
-    const postDate = date instanceof Date ? date : date.toDate();
+  // Format date
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '';
+    const postDate = timestamp instanceof Date ? timestamp : timestamp.toDate();
     return format(postDate, 'MMM d, yyyy • h:mm a');
   };
 
   return (
     <div className="post">
       <div className="post-header">
-        {authorProfile?.photoURL ? (
-          <img src={authorProfile.photoURL} alt={authorProfile.displayName || ''} className="post-user-avatar" />
-        ) : (
-          <div className="post-user-avatar-placeholder">
-            {authorProfile ? getUserInitial(authorProfile) : post.author ? post.author.charAt(0).toUpperCase() : '?'}
-          </div>
+        {getUserAvatar() && (
+          <img src={getUserAvatar()} alt={authorProfile?.displayName || ''} className="post-user-avatar" />
         )}
         
         <div className="post-user-info">
@@ -223,12 +219,12 @@ export default function Post({ post, onDelete, onUpdate }) {
       
       {showComments && (
         <div className="post-comments">
-          <form className="post-comment-form" onSubmit={handleSubmitComment}>
+          <form className="post-comment-form" onSubmit={handleCommentSubmit}>
             {userProfile?.photoURL ? (
               <img src={userProfile.photoURL} alt={userProfile.displayName || ''} className="post-comment-avatar" />
             ) : (
               <div className="post-comment-avatar-placeholder">
-                {getUserInitial(currentUser)}
+                {authorProfile ? authorProfile.displayName.charAt(0).toUpperCase() : '?'}
               </div>
             )}
             
@@ -264,7 +260,7 @@ export default function Post({ post, onDelete, onUpdate }) {
                       <img src={comment.user.photoURL} alt={comment.user.displayName || ''} className="post-comment-avatar" />
                     ) : (
                       <div className="post-comment-avatar-placeholder">
-                        {comment.user ? getUserInitial(comment.user) : '?'}
+                        {comment.user ? comment.user.displayName.charAt(0).toUpperCase() : '?'}
                       </div>
                     )}
                     

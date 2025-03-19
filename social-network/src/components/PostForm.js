@@ -46,8 +46,8 @@ function PostForm({ onPostCreated }) {
     if (!showEmojiPicker && emojiButtonRef.current) {
       const rect = emojiButtonRef.current.getBoundingClientRect();
       setEmojiPickerPosition({
-        top: rect.top - 450, // 在按钮上方显示
-        left: rect.left
+        left: rect.left,
+        top: rect.top - 450
       });
     }
     setShowEmojiPicker(!showEmojiPicker);
@@ -157,7 +157,7 @@ function PostForm({ onPostCreated }) {
     );
   }
 
-  // 渲染emoji选择器的Portal
+  // Render emoji picker Portal
   const renderEmojiPickerPortal = () => {
     if (!showEmojiPicker) return null;
     
@@ -166,18 +166,19 @@ function PostForm({ onPostCreated }) {
         className="emoji-picker" 
         ref={emojiPickerRef}
         style={{
-          position: 'fixed',
-          top: `${emojiPickerPosition.top}px`,
-          left: `${emojiPickerPosition.left}px`,
+          position: 'absolute',
+          top: emojiPickerPosition.top,
+          left: emojiPickerPosition.left,
           zIndex: 9999
         }}
       >
         <EmojiPicker 
           onEmojiClick={handleEmojiClick} 
-          width="320px"
-          height="400px"
+          width={320}
+          height={400}
           searchDisabled={false}
           skinTonesDisabled={true}
+          lazyLoadEmojis={true}
           previewConfig={{ showPreview: false }}
         />
       </div>,

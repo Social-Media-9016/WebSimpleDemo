@@ -120,13 +120,13 @@ function CommentSection({ postId, onCommentCountChange }) {
     }, 0);
   };
 
-  // Toggle emoji picker display
+  // Toggle emoji picker
   const toggleEmojiPicker = () => {
     if (!showEmojiPicker && emojiButtonRef.current) {
       const rect = emojiButtonRef.current.getBoundingClientRect();
       setEmojiPickerPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX
+        left: rect.left,
+        top: rect.top - 350
       });
     }
     setShowEmojiPicker(!showEmojiPicker);
@@ -252,26 +252,28 @@ function CommentSection({ postId, onCommentCountChange }) {
     }
   };
 
-  // 渲染emoji选择器的Portal
+  // Render emoji picker Portal
   const renderEmojiPickerPortal = () => {
     if (!showEmojiPicker) return null;
     
     return createPortal(
       <div 
+        className="comment-emoji-picker"
         ref={emojiPickerRef}
         style={{
           position: 'absolute',
-          top: `${emojiPickerPosition.top}px`,
-          left: `${emojiPickerPosition.left}px`,
+          top: emojiPickerPosition.top,
+          left: emojiPickerPosition.left,
           zIndex: 1000
         }}
       >
         <EmojiPicker 
           onEmojiClick={handleEmojiClick}
-          width="320px"
-          height="350px"
+          width={320}
+          height={350}
           searchDisabled={false}
           skinTonesDisabled={true}
+          lazyLoadEmojis={true}
           previewConfig={{ showPreview: false }}
         />
       </div>,

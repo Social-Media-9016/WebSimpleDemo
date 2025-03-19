@@ -253,7 +253,48 @@
   padding: 1rem 0;
 }
 
-/* 针对小屏幕设备的样式 */
+.comment-emoji-picker {
+  position: absolute;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background-color: white;
+  z-index: 1000;
+}
+
+.comment-emoji-picker .EmojiPickerReact {
+  --epr-emoji-size: 20px;
+  --epr-category-label-height: 28px;
+  box-shadow: none !important;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.comment-emoji-picker .epr-body {
+  overflow: auto !important;
+  height: 300px !important;
+  padding: 0 !important;
+}
+
+.comment-emoji-picker .epr-emoji-category-label {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: white;
+}
+
+@media (max-width: 768px) {
+  .comment-emoji-picker {
+    position: fixed;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 300px;
+  }
+}
+
+/* Styles for small screen devices */
 @media (max-width: 576px) {
   .comment-emoji-picker {
     max-height: 200px;

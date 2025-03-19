@@ -33,15 +33,11 @@ function PostItem({ post, onUpdate, onDelete }) {
 
     // Set initial likes
     if (post.likes) {
-      // 检查likes是否为数组
-      if (Array.isArray(post.likes)) {
-        setLikeCount(post.likes.length);
-        setLiked(post.likes.includes(currentUser.uid));
-      } else {
-        // 如果likes是对象
-        setLikeCount(Object.keys(post.likes).length);
-        setLiked(post.likes[currentUser.uid] === true);
-      }
+      // Check if likes is an array
+      const likeCount = Array.isArray(post.likes) ? post.likes.length : Object.keys(post.likes).length;
+      const hasLiked = Array.isArray(post.likes) ? post.likes.includes(currentUser.uid) : post.likes[currentUser.uid] === true;
+      setLikeCount(likeCount);
+      setLiked(hasLiked);
     }
   }, [post, currentUser.uid]);
 
@@ -52,19 +48,13 @@ function PostItem({ post, onUpdate, onDelete }) {
     try {
       const updatedPost = await toggleLike(post.id, currentUser.uid);
       
-      // 更新点赞状态
-      if (Array.isArray(updatedPost.likes)) {
-        // 如果likes是数组
-        setLiked(updatedPost.likes.includes(currentUser.uid));
-        setLikeCount(updatedPost.likes.length);
-      } else {
-        // 如果likes是对象
-        const isLiked = updatedPost.likes && updatedPost.likes[currentUser.uid] === true;
-        setLiked(isLiked);
-        setLikeCount(Object.keys(updatedPost.likes || {}).length);
-      }
+      // Check if likes is an array
+      const newLikes = Array.isArray(updatedPost.likes) 
+        ? (liked ? updatedPost.likes.filter(id => id !== currentUser.uid) : [...updatedPost.likes, currentUser.uid])
+        // If likes is an object
+        : (liked ? { ...updatedPost.likes, [currentUser.uid]: false } : { ...updatedPost.likes, [currentUser.uid]: true });
       
-      // 更新父组件中的帖子
+      // Update the post in parent component
       onUpdate(updatedPost);
     } catch (error) {
       console.error('Error toggling like:', error);

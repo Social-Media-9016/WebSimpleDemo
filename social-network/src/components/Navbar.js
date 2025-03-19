@@ -10,7 +10,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // 处理滚动事件
+  // Handle scroll event
   useEffect(() => {
     const handleScroll = () => {
       const isScrolled = window.scrollY > 10;
@@ -25,12 +25,12 @@ export default function Navbar() {
     };
   }, [scrolled]);
 
-  // 关闭移动端菜单当路由变化时
+  // Close mobile menu when route changes
   useEffect(() => {
     setMenuOpen(false);
   }, [location]);
 
-  // 处理注销
+  // Handle logout
   const handleLogout = async () => {
     try {
       await logout();
@@ -39,8 +39,8 @@ export default function Navbar() {
     }
   };
 
-  // 生成用户头像或占位符
-  const getUserInitial = () => {
+  // Generate user avatar or placeholder
+  const getUserAvatar = () => {
     if (userProfile && userProfile.displayName) {
       return userProfile.displayName.charAt(0).toUpperCase();
     } else if (currentUser && currentUser.email) {
@@ -77,7 +77,7 @@ export default function Navbar() {
                     />
                   ) : (
                     <div className="user-avatar-placeholder">
-                      {getUserInitial()}
+                      {getUserAvatar()}
                     </div>
                   )}
                 </div>
