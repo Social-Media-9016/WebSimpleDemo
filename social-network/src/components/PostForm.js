@@ -122,27 +122,77 @@ function PostForm({ onPostCreated }) {
       setIsSubmitting(true);
       setError('');
       
-      const post = await createPost(
-        content,
-        currentUser.uid,
-        currentUser.displayName || 'Anonymous User',
-        currentUser.photoURL,
-        image
-      );
+      // 创建帖子并处理潜在错误
+      let maxAttempts = 3;
+      let attempt = 0;
+      let lastError = null;
       
-      // Reset form
-      setContent('');
-      setImage(null);
-      setImagePreview('');
-      setShowEmojiPicker(false);
-      
-      // Notify parent component
-      if (onPostCreated) {
-        onPostCreated(post);
+      while (attempt < maxAttempts) {
+        try {
+          const post = await createPost(
+            content,
+            currentUser.uid,
+            currentUser.displayName || 'Anonymous User',
+            currentUser.photoURL,
+            image
+          );
+          
+          // 成功创建帖子
+          // Reset form
+          setContent('');
+          setImage(null);
+          setImagePreview('');
+          setShowEmojiPicker(false);
+          
+          // Notify parent component
+          if (onPostCreated) {
+            onPostCreated(post);
+          }
+          
+          // 成功后退出循环
+          return;
+        } catch (err) {
+          lastError = err;
+          console.error(`创建帖子失败，第${attempt + 1}次尝试:`, err);
+          
+          // 检查是否是 CORS 或存储相关错误
+          if (err.message && (
+              err.message.includes('CORS') || 
+              err.message.includes('network') ||
+              err.message.includes('access') ||
+              err.code === 'storage/unauthorized' ||
+              err.code === 'storage/canceled'
+            )) {
+            // 这是一个可能是暂时性的错误，可以重试
+            attempt++;
+            // 等待一段时间后重试
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            // 继续循环尝试
+            continue;
+          } else {
+            // 其他类型的错误直接抛出
+            throw err;
+          }
+        }
       }
+      
+      // 如果重试后仍失败
+      throw lastError || new Error('发布帖子失败，请稍后重试');
     } catch (error) {
       console.error("Error creating post:", error);
-      setError('Failed to create post. Please try again later.');
+      
+      // 针对不同错误类型提供具体的错误信息
+      if (error.code === 'storage/unauthorized') {
+        setError('您没有权限上传文件，请检查您的登录状态。');
+      } else if (error.message && error.message.includes('CORS')) {
+        setError('网络请求被拒绝。请联系管理员配置CORS设置，或稍后重试。');
+      } else if (error.code === 'storage/quota-exceeded') {
+        setError('存储空间已满，请联系管理员。');
+      } else if (error.code === 'storage/invalid-format') {
+        setError('文件格式不正确，请上传有效的图片文件。');
+      } else {
+        setError('发布帖子失败，请稍后重试。');
+      }
     } finally {
       setIsSubmitting(false);
     }

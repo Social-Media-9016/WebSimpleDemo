@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import EmojiPicker from 'emoji-picker-react';
 import { FaSmile, FaCamera, FaPaperPlane, FaTimes } from 'react-icons/fa';
 import './CommentSection.css';
+import ImageRenderer from './ImageRenderer';
 
 function CommentSection({ postId, onCommentCountChange }) {
   const [comments, setComments] = useState([]);
@@ -191,38 +192,92 @@ function CommentSection({ postId, onCommentCountChange }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!currentUser) {
+      setError('请登录后再发表评论');
+      return;
+    }
+    
     if (!newComment.trim() && !image) return;
     
     try {
       setLoading(true);
       setError('');
       
-      console.log(`Adding comment to post ID: ${postId}`);
-      const commentData = await createComment(
-        postId,
-        newComment,
-        currentUser.uid,
-        currentUser.displayName || 'Anonymous User',
-        currentUser.photoURL,
-        image
-      );
+      // 创建评论并处理潜在错误
+      let maxAttempts = 3;
+      let attempt = 0;
+      let lastError = null;
       
-      console.log('Comment created successfully:', commentData);
-      
-      // Add new comment to state
-      setComments(prev => [commentData, ...prev]);
-      setNewComment('');
-      setImage(null);
-      setImagePreview('');
-      setShowEmojiPicker(false);
-      
-      // Update comment count
-      if (onCommentCountChange) {
-        onCommentCountChange((comments?.length || 0) + 1);
+      while (attempt < maxAttempts) {
+        try {
+          console.log(`Adding comment to post ID: ${postId}`);
+          const commentData = await createComment(
+            postId,
+            newComment,
+            currentUser.uid,
+            currentUser.displayName || 'Anonymous User',
+            currentUser.photoURL,
+            image
+          );
+          
+          console.log('Comment created successfully:', commentData);
+          
+          // Add new comment to state
+          setComments(prev => [commentData, ...prev]);
+          setNewComment('');
+          setImage(null);
+          setImagePreview('');
+          setShowEmojiPicker(false);
+          
+          // Update comment count
+          if (onCommentCountChange) {
+            onCommentCountChange((comments?.length || 0) + 1);
+          }
+          
+          // 成功后退出循环
+          return;
+        } catch (err) {
+          lastError = err;
+          console.error(`发表评论失败，第${attempt + 1}次尝试:`, err);
+          
+          // 检查是否是 CORS 或存储相关错误
+          if (err.message && (
+              err.message.includes('CORS') || 
+              err.message.includes('network') ||
+              err.message.includes('access') ||
+              err.code === 'storage/unauthorized' ||
+              err.code === 'storage/canceled'
+            )) {
+            // 这是一个可能是暂时性的错误，可以重试
+            attempt++;
+            // 等待一段时间后重试
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            // 继续循环尝试
+            continue;
+          } else {
+            // 其他类型的错误直接抛出
+            throw err;
+          }
+        }
       }
+      
+      // 如果重试后仍失败
+      throw lastError || new Error('发表评论失败，请稍后重试');
     } catch (error) {
       console.error("Failed to post comment:", error);
-      setError('Failed to post comment, please try again later');
+      
+      // 针对不同错误类型提供具体的错误信息
+      if (error.code === 'storage/unauthorized') {
+        setError('您没有权限上传文件，请检查您的登录状态。');
+      } else if (error.message && error.message.includes('CORS')) {
+        setError('网络请求被拒绝。请联系管理员配置CORS设置，或稍后重试。');
+      } else if (error.code === 'storage/quota-exceeded') {
+        setError('存储空间已满，请联系管理员。');
+      } else if (error.code === 'storage/invalid-format') {
+        setError('文件格式不正确，请上传有效的图片文件。');
+      } else {
+        setError('发表评论失败，请稍后重试。');
+      }
     } finally {
       setLoading(false);
     }
@@ -290,41 +345,43 @@ function CommentSection({ postId, onCommentCountChange }) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Write a comment..."
+            placeholder={currentUser ? "Write a comment..." : "Please log in to comment"}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             className="comment-input"
-            disabled={loading}
+            disabled={!currentUser || loading}
             maxLength={200}
           />
-          <div className="comment-tools">
-            <button
-              type="button"
-              className="comment-emoji-btn"
-              onClick={toggleEmojiPicker}
-              disabled={loading}
-              ref={emojiButtonRef}
-            >
-              <FaSmile />
-            </button>
-            <div className="comment-image-upload">
-              <label htmlFor="comment-image" className="image-upload-label">
-                <FaCamera />
-              </label>
-              <input
-                id="comment-image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="image-upload-input"
+          {currentUser && (
+            <div className="comment-tools">
+              <button
+                type="button"
+                className="comment-emoji-btn"
+                onClick={toggleEmojiPicker}
                 disabled={loading}
-              />
+                ref={emojiButtonRef}
+              >
+                <FaSmile />
+              </button>
+              <div className="comment-image-upload">
+                <label htmlFor="comment-image" className="image-upload-label">
+                  <FaCamera />
+                </label>
+                <input
+                  id="comment-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="image-upload-input"
+                  disabled={loading}
+                />
+              </div>
             </div>
-          </div>
+          )}
           <button 
             type="submit" 
             className="comment-submit-btn"
-            disabled={loading || (!newComment.trim() && !image)}
+            disabled={!currentUser || loading || (!newComment.trim() && !image)}
           >
             <FaPaperPlane />
           </button>
@@ -368,32 +425,36 @@ function CommentSection({ postId, onCommentCountChange }) {
                       {comment.userName.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div>
-                    <h5 className="comment-username">{comment.userName}</h5>
-                    <p className="comment-time">{formatTimestamp(comment.createdAt)}</p>
+                  <div className="comment-content">
+                    <div className="comment-meta">
+                      <span className="comment-username">{comment.userName}</span>
+                      <span className="comment-time">{formatTimestamp(comment.createdAt)}</span>
+                    </div>
+                    <p className="comment-text">{comment.content}</p>
+                    {comment.imageURL && (
+                      <div className="comment-image-container">
+                        <ImageRenderer 
+                          src={comment.imageURL} 
+                          alt="Comment image" 
+                          className="comment-image"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="comment-actions">
+                      {currentUser && comment.userId === currentUser.uid && (
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="comment-delete-btn"
+                          aria-label="Delete comment"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-                
-                {comment.userId === currentUser.uid && (
-                  <button 
-                    className="comment-delete-btn" 
-                    onClick={() => handleDeleteComment(comment.id)}
-                  >
-                    Delete
-                  </button>
-                )}
               </div>
-              <p className="comment-content">{comment.content}</p>
-              {comment.imageURL && (
-                <div className="comment-image-container">
-                  <img 
-                    src={comment.imageURL} 
-                    alt="Comment image" 
-                    className="comment-image"
-                    onClick={() => window.open(comment.imageURL, '_blank')}
-                  />
-                </div>
-              )}
             </div>
           ))
         )}

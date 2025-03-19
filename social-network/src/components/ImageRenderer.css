@@ -1,0 +1,66 @@
+.image-renderer {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(248, 245, 255, 0.8));
+  transition: all 0.3s ease;
+}
+
+.image-renderer:hover {
+  transform: scale(1.01);
+  box-shadow: 0 6px 20px rgba(147, 51, 234, 0.15);
+}
+
+.image-content {
+  width: 100%;
+  display: block;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.image-content.loading {
+  opacity: 0;
+}
+
+.image-content.loaded {
+  opacity: 1;
+}
+
+.image-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  z-index: 1;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(147, 51, 234, 0.1);
+  border-top-color: rgba(147, 51, 234, 0.6);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.image-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 245, 255, 0.9));
+  color: #EF4444;
+  font-size: 0.9rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+} 

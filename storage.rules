@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // 允许已登录用户读取所有文件
+      allow read: if request.auth != null;
+      
+      // 允许已登录用户上传自己的图片
+      match /uploads/{type}/{userId}_{fileName} {
+        allow write: if request.auth != null && 
+                      request.auth.uid == userId &&
+                      request.resource.size < 5 * 1024 * 1024 && // 5MB 最大
+                      request.resource.contentType.matches('image/.*');
+      }
+      
+      // 更宽松的测试规则 - 如果上面的规则不适用于您的项目结构，可以临时使用这个
+      // allow write: if request.auth != null && 
+      //             request.resource.size < 5 * 1024 * 1024 && 
+      //             request.resource.contentType.matches('image/.*');
+    }
+  }
+} 
