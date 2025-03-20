@@ -229,60 +229,60 @@ social-network/
 
 # Social Network App Docker Guide
 
-## 先决条件
+## Prerequisites
 
-- 安装 [Docker](https://www.docker.com/products/docker-desktop)
-- 确保您的计算机上已安装Node.js和npm（仅用于开发，非Docker部署不需要）
+- Install [Docker](https://www.docker.com/products/docker-desktop)
+- Ensure Node.js and npm are installed on your computer (only for development, not needed for Docker deployment)
 
-## 构建Docker镜像
+## Building Docker Image
 
-1. 克隆此仓库
+1. Clone this repository
 
 ```bash
 git clone <repository-url>
 cd social-network
 ```
 
-2. 构建Docker镜像
+2. Build Docker image
 
 ```bash
 docker build -t social-network-app .
 ```
 
-该命令将创建一个包含应用程序的Docker镜像，标签为`social-network-app`。
+This command will create a Docker image containing the application, tagged as `social-network-app`.
 
-## 运行Docker容器
+## Running Docker Container
 
-构建镜像后，运行以下命令启动容器：
+After building the image, run the following command to start the container:
 
 ```bash
 docker run -p 3000:80 -d --name social-network-container social-network-app
 ```
 
-这将启动一个名为`social-network-container`的Docker容器，并将容器内的Nginx服务（端口80）映射到主机的3000端口。
+This will start a Docker container named `social-network-container` and map the Nginx service (port 80) inside the container to port 3000 on the host.
 
-## 访问应用程序
+## Accessing the Application
 
-现在您可以通过浏览器访问以下URL来使用应用程序：
+Now you can access the application through your browser at the following URL:
 
 ```
 http://localhost:3000
 ```
 
-## Docker命令参考
+## Docker Command Reference
 
-- 停止容器：`docker stop social-network-container`
-- 启动已停止的容器：`docker start social-network-container`
-- 删除容器：`docker rm social-network-container`
-- 查看运行中的容器：`docker ps`
-- 查看日志：`docker logs social-network-container`
-- 删除镜像：`docker rmi social-network-app`
+- Stop container: `docker stop social-network-container`
+- Start stopped container: `docker start social-network-container`
+- Remove container: `docker rm social-network-container`
+- View running containers: `docker ps`
+- View logs: `docker logs social-network-container`
+- Delete image: `docker rmi social-network-app`
 
-## 开发注意事项
+## Development Notes
 
-### 环境变量
+### Environment Variables
 
-应用程序需要以下环境变量才能正常工作：
+The application requires the following environment variables to work properly:
 
 - `REACT_APP_FIREBASE_API_KEY`
 - `REACT_APP_FIREBASE_AUTH_DOMAIN`
@@ -291,11 +291,11 @@ http://localhost:3000
 - `REACT_APP_FIREBASE_MESSAGING_SENDER_ID`
 - `REACT_APP_FIREBASE_APP_ID`
 
-如需在生产环境使用正确的环境变量，请在构建镜像前修改`.env`文件。
+To use the correct environment variables in production, modify the `.env` file before building the image.
 
-### .dockerignore文件
+### .dockerignore File
 
-为了减小镜像大小并提高构建速度，以下文件和目录不会被复制到Docker镜像中：
+To reduce image size and improve build speed, the following files and directories will not be copied to the Docker image:
 
 ```
 node_modules
@@ -310,11 +310,11 @@ build
 .env.production.local
 ```
 
-## 技术栈
+## Technology Stack
 
-- 前端：React.js
-- UI库：Material UI
-- 状态管理：React Context API
-- 后端服务：Firebase
-- 容器化：Docker
-- Web服务器：Nginx
+- Frontend: React.js
+- UI Library: Material UI
+- State Management: React Context API
+- Backend Services: Firebase
+- Containerization: Docker
+- Web Server: Nginx

@@ -26,7 +26,7 @@ function CommentSection({ postId, onCommentCountChange }) {
   // Using useRef to store current comment count to avoid triggering re-renders
   const commentsCountRef = useRef(0);
   
-  // 使用 useCallback 包装 fetchComments 函数，避免无限循环
+  // Using useCallback to wrap fetchComments function to avoid infinite loops
   const fetchComments = useCallback(async () => {
     if (!postId) return;
     
@@ -154,36 +154,28 @@ function CommentSection({ postId, onCommentCountChange }) {
   
   // Handle emoji selection
   const onEmojiClick = (emojiData) => {
-    // 正确获取emoji并添加到评论中
-    const emoji = emojiData.emoji || emojiData.native || emojiData;
-    
-    // 检查ref是否存在
+    // Correctly get emoji and add it to comment
     if (inputRef.current) {
-      // 获取光标位置
-      const cursorPosition = inputRef.current.selectionStart;
-      const textBeforeCursor = newComment.substring(0, cursorPosition);
-      const textAfterCursor = newComment.substring(cursorPosition);
+      // Get cursor position
+      const start = inputRef.current.selectionStart;
+      const end = inputRef.current.selectionEnd;
       
-      // 在光标位置插入emoji
-      const newText = textBeforeCursor + emoji + textAfterCursor;
+      // Insert emoji at cursor position
+      const newText = newComment.substring(0, start) + emojiData.emoji + newComment.substring(end);
       setNewComment(newText);
       
-      // 延迟设置光标位置到emoji之后
+      // Delay setting cursor position after emoji
       setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-          const newCursorPosition = cursorPosition + emoji.length;
-          inputRef.current.selectionStart = newCursorPosition;
-          inputRef.current.selectionEnd = newCursorPosition;
-        }
+        inputRef.current.focus();
+        inputRef.current.selectionStart = start + emojiData.emoji.length;
+        inputRef.current.selectionEnd = start + emojiData.emoji.length;
       }, 10);
     } else {
-      // 如果没有ref，直接添加到末尾
-      setNewComment(prev => prev + emoji);
+      // If no ref, add to the end
+      setNewComment(newComment + emojiData.emoji);
     }
     
-    // 不要自动关闭emoji选择器
-    // setShowEmojiPicker(false);
+    // Don't automatically close emoji picker
   };
   
   // Auto-resize text input
