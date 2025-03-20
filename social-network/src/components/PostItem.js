@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toggleLike, deletePost } from '../services/postService';
 import { getUserProfile } from '../services/userService';
 import CommentSection from './CommentSection';
+import ImageRenderer from './ImageRenderer';
 import './PostItem.css';
 
 function PostItem({ post, onUpdate, onDelete }) {
@@ -17,6 +18,7 @@ function PostItem({ post, onUpdate, onDelete }) {
   const [authorProfile, setAuthorProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [showFullImage, setShowFullImage] = useState(false);
 
   // Fetch author profile and set initial likes state
   useEffect(() => {
@@ -32,17 +34,17 @@ function PostItem({ post, onUpdate, onDelete }) {
     fetchAuthorData();
 
     // Set initial likes
-    if (post.likes) {
+    if (post.likes && currentUser) {
       // Check if likes is an array
       const likeCount = Array.isArray(post.likes) ? post.likes.length : Object.keys(post.likes).length;
       const hasLiked = Array.isArray(post.likes) ? post.likes.includes(currentUser.uid) : post.likes[currentUser.uid] === true;
       setLikeCount(likeCount);
       setLiked(hasLiked);
     }
-  }, [post, currentUser.uid]);
+  }, [post, currentUser]);
 
   const handleLike = async () => {
-    if (isLoading) return;
+    if (isLoading || !currentUser) return;
     
     setIsLoading(true);
     try {
@@ -100,6 +102,10 @@ function PostItem({ post, onUpdate, onDelete }) {
     return format(date, 'MMM d, yyyy • h:mm a');
   };
 
+  const handleImageClick = () => {
+    setShowFullImage(!showFullImage);
+  };
+
   const renderUserAvatar = () => {
     if (authorProfile && authorProfile.photoURL) {
       return (
@@ -132,7 +138,7 @@ function PostItem({ post, onUpdate, onDelete }) {
           </Link>
           <span className="post-date">{formatDate(post.createdAt)}</span>
         </div>
-        {post.userId === currentUser.uid && (
+        {currentUser && post.userId === currentUser.uid && (
           <div className="post-actions">
             <button 
               className="post-action-button" 
@@ -145,11 +151,11 @@ function PostItem({ post, onUpdate, onDelete }) {
               <div className="post-menu">
                 <Link to={`/edit-post/${post.id}`} className="post-menu-item">
                   <FaEdit style={{ marginRight: '8px' }} />
-                  Edit Post
+                  <span>Edit Post</span>
                 </Link>
                 <button onClick={handleDelete} className="post-menu-item delete">
                   <FaTrash style={{ marginRight: '8px' }} />
-                  Delete Post
+                  <span>Delete Post</span>
                 </button>
               </div>
             )}
@@ -160,8 +166,18 @@ function PostItem({ post, onUpdate, onDelete }) {
       <div className="post-content">
         {post.content && <p className="post-text">{post.content}</p>}
         {post.imageURL && (
-          <div className="post-image-container">
-            <img src={post.imageURL} alt="Post" className="post-image" />
+          <div className={`post-image-container ${showFullImage ? 'fullscreen' : ''}`}>
+            <ImageRenderer 
+              src={post.imageURL} 
+              alt="Post image" 
+              className="post-image" 
+              onClick={handleImageClick}
+            />
+            {showFullImage && (
+              <div className="fullscreen-overlay" onClick={handleImageClick}>
+                <button className="close-fullscreen" onClick={handleImageClick}>✕</button>
+              </div>
+            )}
           </div>
         )}
       </div>

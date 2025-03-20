@@ -1,22 +1,22 @@
 :root {
-  /* 颜色变量 - 更现代化的配色方案 */
-  --primary-color: #3b82f6;
-  --primary-light: #60a5fa;
-  --primary-dark: #2563eb;
-  --primary-rgb: 59, 130, 246;
+  /* Color variables - Modern color scheme */
+  --primary-color: #9333EA;
+  --primary-light: #C084FC;
+  --primary-dark: #7E22CE;
+  --primary-rgb: 147, 51, 234;
   
-  --secondary-color: #ec4899;
-  --secondary-light: #f472b6;
-  --secondary-dark: #db2777;
+  --secondary-color: #06B6D4;
+  --secondary-light: #67E8F9;
+  --secondary-dark: #0891B2;
   
-  --accent-color: #8b5cf6;
-  --accent-light: #a78bfa;
-  --accent-dark: #7c3aed;
+  --accent-color: #F59E0B;
+  --accent-light: #FBBF24;
+  --accent-dark: #D97706;
   
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --error-color: #ef4444;
-  --info-color: #3b82f6;
+  --success-color: #10B981;
+  --warning-color: #FBBF24;
+  --error-color: #EF4444;
+  --info-color: #3B82F6;
   
   --dark-gray: #374151;
   --medium-gray: #6b7280;
@@ -26,35 +26,37 @@
   --text-color: #1f2937;
   --text-light: #6b7280;
   --white-color: #ffffff;
-  --body-bg: #f3f4f6;
+  --body-bg: #f8f5ff;
 
-  /* 渐变 - 更丰富的渐变效果 */
-  --gradient-primary: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  --gradient-secondary: linear-gradient(135deg, #ec4899, #8b5cf6);
-  --gradient-cool: linear-gradient(135deg, #06b6d4, #3b82f6);
-  --gradient-warm: linear-gradient(135deg, #f59e0b, #ef4444);
+  /* Gradients - Rich gradient effects */
+  --gradient-primary: linear-gradient(135deg, #9333EA, #C084FC);
+  --gradient-secondary: linear-gradient(135deg, #06B6D4, #3B82F6);
+  --gradient-cool: linear-gradient(135deg, #06B6D4, #9333EA);
+  --gradient-warm: linear-gradient(135deg, #F59E0B, #EF4444);
+  --gradient-success: linear-gradient(135deg, #10B981, #34D399);
+  --gradient-danger: linear-gradient(135deg, #EF4444, #F87171);
   
-  /* 边框圆角 - 更现代的圆角 */
+  /* Border radius - Modern rounded corners */
   --border-radius-sm: 0.375rem;
   --border-radius-md: 0.5rem;
   --border-radius-lg: 0.75rem;
   --border-radius-xl: 1rem;
   --border-radius-full: 9999px;
   
-  /* 阴影 - 更精细的阴影效果 */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
-  --shadow-focus: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  /* Shadows - Refined shadow effects */
+  --shadow-sm: 0 1px 2px 0 rgba(147, 51, 234, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(147, 51, 234, 0.1), 0 2px 4px -1px rgba(147, 51, 234, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(147, 51, 234, 0.1), 0 4px 6px -2px rgba(147, 51, 234, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(147, 51, 234, 0.1), 0 10px 10px -5px rgba(147, 51, 234, 0.04);
+  --shadow-inner: inset 0 2px 4px 0 rgba(147, 51, 234, 0.06);
+  --shadow-focus: 0 0 0 3px rgba(147, 51, 234, 0.3);
   
-  /* 动画过渡 */
+  /* Animation transitions */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.3s ease;
   --transition-slow: 0.5s ease;
   
-  /* 字体 */
+  /* Fonts */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
@@ -65,7 +67,7 @@
   padding: 0;
 }
 
-/* 添加Inter字体 */
+/* Add Inter font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 body {
@@ -84,7 +86,7 @@ code {
     monospace;
 }
 
-/* 容器 */
+/* Containers */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -96,7 +98,7 @@ code {
   padding-bottom: 2rem;
 }
 
-/* 卡片 - 更现代的设计 */
+/* Cards - Modern design */
 .card {
   background-color: var(--white-color);
   border-radius: var(--border-radius-lg);
@@ -111,7 +113,7 @@ code {
   transform: translateY(-2px);
 }
 
-/* 按钮 */
+/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -125,6 +127,21 @@ code {
   transition: all var(--transition-fast);
   text-decoration: none;
   border: none;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--gradient-primary);
+  z-index: -1;
+  transition: opacity 0.3s ease;
 }
 
 .btn:focus {
@@ -133,22 +150,26 @@ code {
 }
 
 .btn-primary {
-  background-color: var(--primary-color);
   color: var(--white-color);
 }
 
+.btn-primary::before {
+  background: var(--gradient-primary);
+}
+
 .btn-primary:hover {
-  background-color: var(--primary-dark);
   transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background-color: var(--secondary-color);
   color: var(--white-color);
 }
 
+.btn-secondary::before {
+  background: var(--gradient-secondary);
+}
+
 .btn-secondary:hover {
-  background-color: var(--secondary-dark);
   transform: translateY(-1px);
 }
 
@@ -158,18 +179,30 @@ code {
   color: var(--primary-color);
 }
 
+.btn-outline::before {
+  opacity: 0;
+  background: var(--gradient-primary);
+}
+
 .btn-outline:hover {
-  background-color: var(--primary-color);
   color: var(--white-color);
+  border-color: transparent;
+}
+
+.btn-outline:hover::before {
+  opacity: 1;
 }
 
 .btn-danger {
-  background-color: var(--error-color);
   color: var(--white-color);
 }
 
+.btn-danger::before {
+  background: var(--gradient-danger);
+}
+
 .btn-danger:hover {
-  background-color: var(--secondary-dark);
+  transform: translateY(-1px);
 }
 
 .btn-sm {
@@ -192,7 +225,7 @@ code {
   transform: none;
 }
 
-/* 表单 - 更现代的输入框 */
+/* Forms - Modern input fields */
 .form-group {
   margin-bottom: 1.5rem;
 }
@@ -235,7 +268,7 @@ code {
   margin-top: 0.25rem;
 }
 
-/* 警告框 */
+/* Alerts */
 .alert {
   padding: 1rem;
   margin-bottom: 1rem;
@@ -261,7 +294,7 @@ code {
   color: var(--error-color);
 }
 
-/* 徽章 */
+/* Badges */
 .badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
@@ -299,7 +332,7 @@ code {
   color: var(--white-color);
 }
 
-/* 新增动画效果 */
+/* Added animation effects */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -318,7 +351,7 @@ code {
   animation: slideUp var(--transition-normal);
 }
 
-/* 自定义滚动条 */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -337,7 +370,7 @@ code {
   background: var(--dark-gray);
 }
 
-/* 加载指示器 */
+/* Loading indicator */
 .loader {
   display: inline-block;
   width: 1.5rem;
@@ -364,7 +397,7 @@ code {
   border-width: 3px;
 }
 
-/* 工具类 */
+/* Utility classes */
 .text-center {
   text-align: center;
 }
@@ -470,7 +503,7 @@ code {
 .bg-gray-light { background-color: var(--light-gray); }
 .bg-gray-lightest { background-color: var(--lightest-gray); }
 
-/* 响应式工具类 */
+/* Responsive utility classes */
 @media (max-width: 640px) {
   .container {
     padding: 0.75rem;
@@ -502,4 +535,43 @@ code {
   .hidden-xl {
     display: none;
   }
+}
+
+/* Animation effects */
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-animation 3s ease infinite;
+}
+
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-cool {
+  background: var(--gradient-cool);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-warm {
+  background: var(--gradient-warm);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }

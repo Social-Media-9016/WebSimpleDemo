@@ -11,7 +11,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { saveImage, deleteImage } from './localImageService';
+import { uploadImageToStorage, deleteImageFromStorage } from './firebaseStorageService';
 import { updateCommentCount } from './postService';
 
 // Create a new comment
@@ -24,7 +24,7 @@ export const createComment = async (postId, content, userId, userName, userPhoto
     // Upload image (if any)
     let imageData = null;
     if (imageFile) {
-      imageData = await saveImage(imageFile, 'comments', userId);
+      imageData = await uploadImageToStorage(imageFile, 'comments', userId);
     }
     
     const comment = {
@@ -113,7 +113,7 @@ export const deleteComment = async (commentId) => {
     
     // Delete the image if comment has one
     if (comment.imagePath) {
-      await deleteImage(comment.imagePath);
+      await deleteImageFromStorage(comment.imagePath);
     }
     
     // Delete the comment

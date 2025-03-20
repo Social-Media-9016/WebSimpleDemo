@@ -69,7 +69,7 @@ function PostForm({ onPostCreated }) {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showEmojiPicker]);
+  }, [showEmojiPicker]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle image selection
   const handleImageChange = (e) => {
@@ -112,6 +112,12 @@ function PostForm({ onPostCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Verify user is logged in
+    if (!currentUser) {
+      setError('Please log in before posting');
+      return;
+    }
+    
     // Validation
     if ((!content.trim() && !image) || isGuest()) {
       setError('Please enter content or upload an image');
@@ -122,27 +128,83 @@ function PostForm({ onPostCreated }) {
       setIsSubmitting(true);
       setError('');
       
-      const post = await createPost(
-        content,
-        currentUser.uid,
-        currentUser.displayName || 'Anonymous User',
-        currentUser.photoURL,
-        image
-      );
+      // Create post and handle potential errors
+      let maxAttempts = 3;
+      let attempt = 0;
+      let lastError = null;
       
-      // Reset form
-      setContent('');
-      setImage(null);
-      setImagePreview('');
-      setShowEmojiPicker(false);
+      // Define post creation function, avoid declaring functions in loops
+      const attemptCreatePost = async () => {
+        console.log(`Attempting to create post, attempt ${attempt + 1}, user ID:`, currentUser.uid);
+        return await createPost(
+          content,
+          currentUser.uid,
+          currentUser.displayName || 'Anonymous User',
+          currentUser.photoURL,
+          image
+        );
+      };
       
-      // Notify parent component
-      if (onPostCreated) {
-        onPostCreated(post);
+      while (attempt < maxAttempts) {
+        try {
+          const post = await attemptCreatePost();
+          
+          // Successfully created post
+          // Reset form
+          setContent('');
+          setImage(null);
+          setImagePreview('');
+          setShowEmojiPicker(false);
+          
+          // Notify parent component
+          if (onPostCreated) {
+            onPostCreated(post);
+          }
+          
+          // Exit loop after success
+          return;
+        } catch (err) {
+          lastError = err;
+          console.error(`Post creation failed, attempt ${attempt + 1}:`, err);
+          
+          // Check if it's a CORS or storage related error
+          if (err.message && (
+              err.message.includes('CORS') || 
+              err.message.includes('network') ||
+              err.message.includes('access') ||
+              err.code === 'storage/unauthorized' ||
+              err.code === 'storage/canceled'
+            )) {
+            // This could be a temporary error, can retry
+            attempt++;
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            // Continue loop
+            continue;
+          } else {
+            // Other types of errors directly throw
+            throw err;
+          }
+        }
       }
+      
+      // If retries fail
+      throw lastError || new Error('Posting failed, please try again later');
     } catch (error) {
       console.error("Error creating post:", error);
-      setError('Failed to create post. Please try again later.');
+      
+      // Provide specific error information for different error types
+      if (error.code === 'storage/unauthorized') {
+        setError('You do not have permission to upload files, please check your login status.');
+      } else if (error.message && error.message.includes('CORS')) {
+        setError('Network request denied. Please contact the administrator to configure CORS settings, or try again later.');
+      } else if (error.code === 'storage/quota-exceeded') {
+        setError('Storage space is full, please contact the administrator.');
+      } else if (error.code === 'storage/invalid-format') {
+        setError('File format is incorrect, please upload a valid image file.');
+      } else {
+        setError('Posting failed, please try again later.');
+      }
     } finally {
       setIsSubmitting(false);
     }

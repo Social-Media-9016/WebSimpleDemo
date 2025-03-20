@@ -1,5 +1,5 @@
 # Build stage based on Node.js official image
-FROM node:16 as build
+FROM node:14-alpine as build
 
 # Set working directory
 WORKDIR /app

@@ -19,18 +19,22 @@
 
 .left-sidebar {
   position: sticky;
-  top: 2rem;
-  height: calc(100vh - 4rem);
+  top: calc(60px + 2rem);
+  height: calc(100vh - 100px);
   overflow-y: auto;
   padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.2) rgba(147, 51, 234, 0.05);
 }
 
 .right-sidebar {
   position: sticky;
-  top: 2rem;
-  height: calc(100vh - 4rem);
+  top: calc(60px + 2rem);
+  height: calc(100vh - 100px);
   overflow-y: auto;
   padding-left: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.2) rgba(147, 51, 234, 0.05);
 }
 
 .profile-card, .about-card, .trending-card, .suggested-card, .guest-card {
@@ -39,12 +43,13 @@
   box-shadow: var(--shadow-md);
   padding: 1.5rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: none;
+  border: 1px solid rgba(147, 51, 234, 0.1);
 }
 
 .profile-card:hover, .about-card:hover, .trending-card:hover, .suggested-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  border-color: rgba(147, 51, 234, 0.2);
 }
 
 .profile-card {
@@ -55,6 +60,19 @@
   background: linear-gradient(to bottom, rgba(255,255,255,0.8) 0%, rgba(255,255,255,1) 20%), var(--gradient-primary);
   border-radius: var(--border-radius-lg);
   color: var(--text-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.05), rgba(192, 132, 252, 0.05));
+  z-index: -1;
 }
 
 .profile-avatar {
@@ -64,7 +82,13 @@
   object-fit: cover;
   margin-bottom: 1rem;
   border: 3px solid white;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.4);
 }
 
 .profile-avatar-placeholder {
@@ -80,12 +104,21 @@
   font-size: 2rem;
   margin-bottom: 1rem;
   border: 3px solid white;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.profile-avatar-placeholder:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.4);
 }
 
 .profile-card h3 {
   margin: 0 0 0.5rem;
-  color: var(--text-color);
+  background: linear-gradient(45deg, #9333EA, #C084FC);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   font-weight: 600;
 }
 
@@ -96,10 +129,11 @@
 }
 
 .sidebar-nav {
-  background-color: white;
+  background: linear-gradient(135deg, #ffffff, #f8f5ff);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-md);
   overflow: hidden;
+  border: 1px solid rgba(147, 51, 234, 0.1);
 }
 
 .sidebar-nav ul {
@@ -116,15 +150,33 @@
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
   border-left: 3px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(147, 51, 234, 0.05), rgba(192, 132, 252, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
 }
 
 .sidebar-nav-item:hover {
-  background-color: var(--lightest-gray);
   color: var(--primary-color);
 }
 
+.sidebar-nav-item:hover::before {
+  opacity: 1;
+}
+
 .sidebar-nav-item.active {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(147, 51, 234, 0.1);
   color: var(--primary-color);
   border-left: 3px solid var(--primary-color);
   font-weight: 500;
@@ -133,11 +185,18 @@
 .sidebar-icon {
   margin-right: 0.75rem;
   font-size: 1.25rem;
+  background: linear-gradient(45deg, #9333EA, #C084FC);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .about-card h3 {
   margin: 0 0 1rem;
-  color: var(--primary-color);
+  background: linear-gradient(45deg, #9333EA, #C084FC);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   font-weight: 600;
 }
 
@@ -175,7 +234,10 @@
 
 /* Trending section */
 .trending-card h3 {
-  color: var(--primary-color);
+  background: linear-gradient(45deg, #9333EA, #C084FC);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   margin: 0 0 1rem;
   font-weight: 600;
 }
@@ -200,7 +262,10 @@
 
 .trending-tag {
   font-weight: 500;
-  color: var(--primary-color);
+  background: linear-gradient(45deg, #9333EA, #C084FC);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .trending-count {
@@ -213,7 +278,10 @@
 
 /* Suggested users */
 .suggested-card h3 {
-  color: var(--primary-color);
+  background: linear-gradient(45deg, #9333EA, #C084FC);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   margin: 0 0 1rem;
   font-weight: 600;
 }
@@ -246,6 +314,8 @@
   justify-content: center;
   font-weight: bold;
   margin-right: 0.75rem;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(147, 51, 234, 0.2);
 }
 
 .suggested-user-info {
@@ -253,9 +323,13 @@
 }
 
 .suggested-user-info h4 {
-  margin: 0 0 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: linear-gradient(45deg, #9333EA, #C084FC);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .suggested-user-info p {

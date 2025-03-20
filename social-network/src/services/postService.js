@@ -12,7 +12,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { saveImage, deleteImage } from './localImageService';
+import { uploadImageToStorage, deleteImageFromStorage } from './firebaseStorageService';
 
 // Create a new post
 export const createPost = async (content, userId, userName, userPhotoURL = null, imageFile = null) => {
@@ -20,7 +20,7 @@ export const createPost = async (content, userId, userName, userPhotoURL = null,
     // Upload image (if any)
     let imageData = null;
     if (imageFile) {
-      imageData = await saveImage(imageFile, 'posts', userId);
+      imageData = await uploadImageToStorage(imageFile, 'posts', userId);
     }
     
     const post = {
@@ -151,7 +151,7 @@ export const deletePost = async (postId) => {
     
     // Delete image if post has one
     if (post.imagePath) {
-      await deleteImage(post.imagePath);
+      await deleteImageFromStorage(post.imagePath);
     }
     
     await deleteDoc(postRef);
