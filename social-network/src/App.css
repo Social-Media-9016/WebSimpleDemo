@@ -1,5 +1,5 @@
 :root {
-  /* 颜色变量 - 更现代化的配色方案 */
+  /* Color variables - Modern color scheme */
   --primary-color: #9333EA;
   --primary-light: #C084FC;
   --primary-dark: #7E22CE;
@@ -28,7 +28,7 @@
   --white-color: #ffffff;
   --body-bg: #f8f5ff;
 
-  /* 渐变 - 更丰富的渐变效果 */
+  /* Gradients - Rich gradient effects */
   --gradient-primary: linear-gradient(135deg, #9333EA, #C084FC);
   --gradient-secondary: linear-gradient(135deg, #06B6D4, #3B82F6);
   --gradient-cool: linear-gradient(135deg, #06B6D4, #9333EA);
@@ -36,14 +36,14 @@
   --gradient-success: linear-gradient(135deg, #10B981, #34D399);
   --gradient-danger: linear-gradient(135deg, #EF4444, #F87171);
   
-  /* 边框圆角 - 更现代的圆角 */
+  /* Border radius - Modern rounded corners */
   --border-radius-sm: 0.375rem;
   --border-radius-md: 0.5rem;
   --border-radius-lg: 0.75rem;
   --border-radius-xl: 1rem;
   --border-radius-full: 9999px;
   
-  /* 阴影 - 更精细的阴影效果 */
+  /* Shadows - Refined shadow effects */
   --shadow-sm: 0 1px 2px 0 rgba(147, 51, 234, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(147, 51, 234, 0.1), 0 2px 4px -1px rgba(147, 51, 234, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(147, 51, 234, 0.1), 0 4px 6px -2px rgba(147, 51, 234, 0.05);
@@ -51,12 +51,12 @@
   --shadow-inner: inset 0 2px 4px 0 rgba(147, 51, 234, 0.06);
   --shadow-focus: 0 0 0 3px rgba(147, 51, 234, 0.3);
   
-  /* 动画过渡 */
+  /* Animation transitions */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.3s ease;
   --transition-slow: 0.5s ease;
   
-  /* 字体 */
+  /* Fonts */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
@@ -67,7 +67,7 @@
   padding: 0;
 }
 
-/* 添加Inter字体 */
+/* Add Inter font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 body {
@@ -86,7 +86,7 @@ code {
     monospace;
 }
 
-/* 容器 */
+/* Containers */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -98,7 +98,7 @@ code {
   padding-bottom: 2rem;
 }
 
-/* 卡片 - 更现代的设计 */
+/* Cards - Modern design */
 .card {
   background-color: var(--white-color);
   border-radius: var(--border-radius-lg);
@@ -113,7 +113,7 @@ code {
   transform: translateY(-2px);
 }
 
-/* 按钮 */
+/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -225,7 +225,7 @@ code {
   transform: none;
 }
 
-/* 表单 - 更现代的输入框 */
+/* Forms - Modern input fields */
 .form-group {
   margin-bottom: 1.5rem;
 }
@@ -268,7 +268,7 @@ code {
   margin-top: 0.25rem;
 }
 
-/* 警告框 */
+/* Alerts */
 .alert {
   padding: 1rem;
   margin-bottom: 1rem;
@@ -294,7 +294,7 @@ code {
   color: var(--error-color);
 }
 
-/* 徽章 */
+/* Badges */
 .badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
@@ -332,7 +332,7 @@ code {
   color: var(--white-color);
 }
 
-/* 新增动画效果 */
+/* Added animation effects */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -351,7 +351,7 @@ code {
   animation: slideUp var(--transition-normal);
 }
 
-/* 自定义滚动条 */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -370,7 +370,7 @@ code {
   background: var(--dark-gray);
 }
 
-/* 加载指示器 */
+/* Loading indicator */
 .loader {
   display: inline-block;
   width: 1.5rem;
@@ -397,7 +397,7 @@ code {
   border-width: 3px;
 }
 
-/* 工具类 */
+/* Utility classes */
 .text-center {
   text-align: center;
 }
@@ -503,7 +503,7 @@ code {
 .bg-gray-light { background-color: var(--light-gray); }
 .bg-gray-lightest { background-color: var(--lightest-gray); }
 
-/* 响应式工具类 */
+/* Responsive utility classes */
 @media (max-width: 640px) {
   .container {
     padding: 0.75rem;
@@ -537,7 +537,7 @@ code {
   }
 }
 
-/* 动画效果 */
+/* Animation effects */
 @keyframes gradient-animation {
   0% {
     background-position: 0% 50%;

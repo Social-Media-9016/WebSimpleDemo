@@ -25,21 +25,45 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [token, setToken] = useState(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
+  const [profileUpdateTrigger, setProfileUpdateTrigger] = useState(0);
 
-  // Refresh token function
+  // Token refresh function
   async function refreshToken() {
     try {
       if (currentUser) {
         const newToken = await getIdToken(currentUser, true);
         setToken(newToken);
+        console.log("Token refreshed", newToken.substring(0, 10) + "...");
         return newToken;
       }
       return null;
     } catch (error) {
-      console.error("刷新令牌时出错:", error);
-      setError("无法刷新授权令牌");
+      console.error("Error refreshing token:", error);
+      setError("Unable to refresh authorization token");
       return null;
     }
+  }
+
+  // Check authentication state
+  async function checkAuthState() {
+    if (!currentUser) {
+      console.log("Warning: User not logged in, cannot perform operations requiring authentication");
+      return false;
+    }
+    
+    // Ensure token is valid
+    if (!token) {
+      try {
+        const newToken = await refreshToken();
+        return !!newToken;
+      } catch (e) {
+        console.error("Failed to check authentication status", e);
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   // Sign up function
@@ -49,7 +73,7 @@ export function AuthProvider({ children }) {
       // Update profile with display name
       await updateProfile(userCredential.user, { displayName });
       
-      // 注册成功后立即刷新令牌
+      // Refresh token immediately after successful registration
       if (userCredential.user) {
         await refreshToken();
       }
@@ -66,7 +90,7 @@ export function AuthProvider({ children }) {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       
-      // 登录成功后立即刷新令牌
+      // Refresh token immediately after successful login
       if (result.user) {
         await refreshToken();
       }
@@ -87,7 +111,7 @@ export function AuthProvider({ children }) {
       });
       const result = await signInWithPopup(auth, provider);
       
-      // Google 登录成功后立即刷新令牌
+      // Refresh token immediately after successful Google login
       if (result.user) {
         await refreshToken();
       }
@@ -118,8 +142,9 @@ export function AuthProvider({ children }) {
         // Force refresh the user
         setCurrentUser({ ...currentUser, ...profile });
         
-        // 更新个人资料后刷新令牌
+        // Refresh token after profile update
         await refreshToken();
+        setProfileUpdateTrigger(prev => prev + 1);
       }
     } catch (error) {
       setError(error.message);
@@ -127,43 +152,54 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // 定期刷新令牌（每50分钟刷新一次）
+  // Refresh token after profile update
+  useEffect(() => {
+    if (profileUpdateTrigger > 0 && currentUser) {
+      refreshToken();
+    }
+  }, [profileUpdateTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Periodic token refresh (every 30 minutes)
   useEffect(() => {
     if (!currentUser) return;
     
-    // 初始刷新
+    // Initial refresh
     refreshToken();
     
-    // 设置定期刷新（Firebase 令牌通常有效期为 1 小时）
+    // Set up periodic refresh (Firebase tokens typically valid for 1 hour)
     const refreshInterval = setInterval(() => {
       refreshToken();
-    }, 50 * 60 * 1000); // 50 分钟
+    }, 30 * 60 * 1000); // 30 minutes
     
     return () => clearInterval(refreshInterval);
-  }, [currentUser]);
+  }, [currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Listen for auth state changes
   useEffect(() => {
+    console.log("Setting up authentication state listener...");
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log("Authentication state change:", user ? `User logged in: ${user.uid}` : "User not logged in");
       setCurrentUser(user);
       
-      // 当用户状态改变时刷新令牌
+      // Refresh token when user state changes
       if (user) {
         try {
           await refreshToken();
         } catch (e) {
-          console.error("用户状态改变时刷新令牌失败", e);
+          console.error("Failed to refresh token on user state change", e);
         }
       } else {
         setToken(null);
       }
       
       setLoading(false);
+      setAuthInitialized(true);
     });
 
     // Cleanup subscription
     return unsubscribe;
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Function to check if user is guest
   function isGuest() {
@@ -180,7 +216,9 @@ export function AuthProvider({ children }) {
     logout,
     updateUserProfile,
     refreshToken,
-    isGuest
+    isGuest,
+    checkAuthState,
+    authInitialized
   };
 
   return (

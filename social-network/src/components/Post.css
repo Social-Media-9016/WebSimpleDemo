@@ -580,7 +580,7 @@
   }
 }
 
-/* 添加炫彩光晕效果 */
+/* Add shimmer effect */
 .post::after {
   content: '';
   position: absolute;

@@ -408,7 +408,7 @@
   animation: fadeIn 0.3s ease;
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
   .comment-section {
     padding: 1rem;
@@ -432,7 +432,7 @@
   }
 }
 
-/* 禁用状态样式 */
+/* Disabled state styles */
 .comment-input:disabled {
   background: linear-gradient(135deg, #f5f6fa, #fcfbfe);
   cursor: not-allowed;
@@ -446,7 +446,7 @@
   transform: none !important;
 }
 
-/* 动画效果 */
+/* Animation effects */
 @keyframes fadeIn {
   from {
     opacity: 0;

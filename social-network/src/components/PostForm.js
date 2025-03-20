@@ -69,7 +69,7 @@ function PostForm({ onPostCreated }) {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showEmojiPicker]);
+  }, [showEmojiPicker]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle image selection
   const handleImageChange = (e) => {
@@ -112,6 +112,12 @@ function PostForm({ onPostCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Verify user is logged in
+    if (!currentUser) {
+      setError('Please log in before posting');
+      return;
+    }
+    
     // Validation
     if ((!content.trim() && !image) || isGuest()) {
       setError('Please enter content or upload an image');
@@ -122,22 +128,28 @@ function PostForm({ onPostCreated }) {
       setIsSubmitting(true);
       setError('');
       
-      // 创建帖子并处理潜在错误
+      // Create post and handle potential errors
       let maxAttempts = 3;
       let attempt = 0;
       let lastError = null;
       
+      // Define post creation function, avoid declaring functions in loops
+      const attemptCreatePost = async () => {
+        console.log(`Attempting to create post, attempt ${attempt + 1}, user ID:`, currentUser.uid);
+        return await createPost(
+          content,
+          currentUser.uid,
+          currentUser.displayName || 'Anonymous User',
+          currentUser.photoURL,
+          image
+        );
+      };
+      
       while (attempt < maxAttempts) {
         try {
-          const post = await createPost(
-            content,
-            currentUser.uid,
-            currentUser.displayName || 'Anonymous User',
-            currentUser.photoURL,
-            image
-          );
+          const post = await attemptCreatePost();
           
-          // 成功创建帖子
+          // Successfully created post
           // Reset form
           setContent('');
           setImage(null);
@@ -149,13 +161,13 @@ function PostForm({ onPostCreated }) {
             onPostCreated(post);
           }
           
-          // 成功后退出循环
+          // Exit loop after success
           return;
         } catch (err) {
           lastError = err;
-          console.error(`创建帖子失败，第${attempt + 1}次尝试:`, err);
+          console.error(`Post creation failed, attempt ${attempt + 1}:`, err);
           
-          // 检查是否是 CORS 或存储相关错误
+          // Check if it's a CORS or storage related error
           if (err.message && (
               err.message.includes('CORS') || 
               err.message.includes('network') ||
@@ -163,35 +175,35 @@ function PostForm({ onPostCreated }) {
               err.code === 'storage/unauthorized' ||
               err.code === 'storage/canceled'
             )) {
-            // 这是一个可能是暂时性的错误，可以重试
+            // This could be a temporary error, can retry
             attempt++;
-            // 等待一段时间后重试
+            // Wait before retrying
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-            // 继续循环尝试
+            // Continue loop
             continue;
           } else {
-            // 其他类型的错误直接抛出
+            // Other types of errors directly throw
             throw err;
           }
         }
       }
       
-      // 如果重试后仍失败
-      throw lastError || new Error('发布帖子失败，请稍后重试');
+      // If retries fail
+      throw lastError || new Error('Posting failed, please try again later');
     } catch (error) {
       console.error("Error creating post:", error);
       
-      // 针对不同错误类型提供具体的错误信息
+      // Provide specific error information for different error types
       if (error.code === 'storage/unauthorized') {
-        setError('您没有权限上传文件，请检查您的登录状态。');
+        setError('You do not have permission to upload files, please check your login status.');
       } else if (error.message && error.message.includes('CORS')) {
-        setError('网络请求被拒绝。请联系管理员配置CORS设置，或稍后重试。');
+        setError('Network request denied. Please contact the administrator to configure CORS settings, or try again later.');
       } else if (error.code === 'storage/quota-exceeded') {
-        setError('存储空间已满，请联系管理员。');
+        setError('Storage space is full, please contact the administrator.');
       } else if (error.code === 'storage/invalid-format') {
-        setError('文件格式不正确，请上传有效的图片文件。');
+        setError('File format is incorrect, please upload a valid image file.');
       } else {
-        setError('发布帖子失败，请稍后重试。');
+        setError('Posting failed, please try again later.');
       }
     } finally {
       setIsSubmitting(false);
