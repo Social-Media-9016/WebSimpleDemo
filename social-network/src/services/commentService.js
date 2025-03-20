@@ -30,6 +30,7 @@ export const createComment = async (postId, content, userId, userName, userPhoto
     const comment = {
       postId,
       content,
+      text: content,
       userId,
       userName,
       userPhotoURL,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createComment, getCommentsByPostId, deleteComment } from '../services/commentService';
@@ -7,6 +7,7 @@ import EmojiPicker from 'emoji-picker-react';
 import { FaSmile, FaCamera, FaPaperPlane, FaTimes } from 'react-icons/fa';
 import './CommentSection.css';
 import ImageRenderer from './ImageRenderer';
+import { getUserProfile } from '../services/userService';
 
 function CommentSection({ postId, onCommentCountChange }) {
   const [comments, setComments] = useState([]);
@@ -25,167 +26,179 @@ function CommentSection({ postId, onCommentCountChange }) {
   // Using useRef to store current comment count to avoid triggering re-renders
   const commentsCountRef = useRef(0);
   
-  // Load comments
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchComments = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        console.log(`Fetching comments for post ID: ${postId}`);
-        
-        const commentsData = await getCommentsByPostId(postId);
-        
-        if (isMounted) {
-          console.log(`Retrieved ${commentsData.length} comments`);
-          setComments(commentsData);
-          
-          // Use ref to store current count
-          if (commentsData.length !== commentsCountRef.current) {
-            commentsCountRef.current = commentsData.length;
-            // Only call when comment count changes
-            if (onCommentCountChange) {
-              onCommentCountChange(commentsData.length);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load comments:", error);
-        if (isMounted) {
-          setError('Failed to load comments, please try again later');
-          setComments([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchComments();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [postId, onCommentCountChange]);
-
-  // Format timestamp
-  const formatTimestamp = (timestamp) => {
+  // 使用 useCallback 包装 fetchComments 函数，避免无限循环
+  const fetchComments = useCallback(async () => {
+    if (!postId) return;
+    
     try {
-      if (!timestamp) return 'Just now';
+      setLoading(true);
+      console.log('Fetching comments for post:', postId);
       
-      // Handle various timestamp formats
-      let date;
-      if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-        date = timestamp.toDate();
-      } else if (timestamp.seconds) {
-        date = new Date(timestamp.seconds * 1000);
-      } else if (timestamp instanceof Date) {
-        date = timestamp;
-      } else {
-        date = new Date(timestamp);
+      const commentsData = await getCommentsByPostId(postId);
+      console.log('Got comments:', commentsData);
+      
+      // Fetch user data for each comment
+      const commentsWithUserData = await Promise.all(
+        commentsData.map(async (comment) => {
+          try {
+            const userData = await getUserProfile(comment.userId);
+            return {
+              ...comment,
+              userName: userData?.displayName || comment.userName || 'User',
+              userPhotoURL: userData?.photoURL || comment.userPhotoURL
+            };
+          } catch (error) {
+            console.error('Error fetching user data for comment:', error);
+            return comment;
+          }
+        })
+      );
+      
+      setComments(commentsWithUserData);
+      commentsCountRef.current = commentsWithUserData.length;
+      
+      // Update parent component with comment count if callback provided
+      if (onCommentCountChange) {
+        onCommentCountChange(commentsWithUserData.length);
       }
-      
-      // Validate date is valid
-      if (isNaN(date.getTime())) {
-        return 'Just now';
-      }
-      
-      return formatDistanceToNow(date, { addSuffix: true });
     } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Just now';
+      console.error('Error fetching comments:', error);
+      
+      if (error.message && error.message.includes('index')) {
+        setError('Please try again in a moment while database indexes are created.');
+      } else {
+        setError('Failed to load comments. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
-  };
-
-  // Handle emoji selection
-  const handleEmojiClick = (emojiObj) => {
-    const emoji = emojiObj.emoji;
-    const cursorPosition = inputRef.current.selectionStart;
-    const textBeforeCursor = newComment.substring(0, cursorPosition);
-    const textAfterCursor = newComment.substring(cursorPosition);
-    
-    // Insert emoji at cursor position
-    const newText = textBeforeCursor + emoji + textAfterCursor;
-    setNewComment(newText);
-    
-    // Close emoji picker
-    setShowEmojiPicker(false);
-    
-    // Refocus on input field and place cursor after the inserted emoji
-    setTimeout(() => {
-      inputRef.current.focus();
-      const newCursorPosition = cursorPosition + emoji.length;
-      inputRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
-    }, 0);
-  };
-
-  // Toggle emoji picker
-  const toggleEmojiPicker = () => {
-    if (!showEmojiPicker && emojiButtonRef.current) {
-      const rect = emojiButtonRef.current.getBoundingClientRect();
-      setEmojiPickerPosition({
-        left: rect.left,
-        top: rect.top - 350
-      });
-    }
-    setShowEmojiPicker(!showEmojiPicker);
-  };
-
-  // Close emoji picker when clicking outside
-  const handleClickOutside = (e) => {
-    if (showEmojiPicker && 
-        emojiPickerRef.current && 
-        !emojiPickerRef.current.contains(e.target) && 
-        !e.target.closest('.comment-emoji-btn')) {
-      setShowEmojiPicker(false);
-    }
-  };
-
-  // Add click event listener
+  }, [postId, onCommentCountChange]);
+  
+  // Fetch comments when component mounts or postId changes
   useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
+    if (postId) {
+      fetchComments();
+    }
+  }, [postId, fetchComments]);
+  
+  // Effect for handling EmojiPicker positioning and outside clicks
+  useEffect(() => {
+    // Only add listener when emoji picker is open
+    if (!showEmojiPicker) return;
+    
+    const handleOutsideClick = (e) => {
+      if (
+        emojiPickerRef.current && 
+        !emojiPickerRef.current.contains(e.target) &&
+        !emojiButtonRef.current.contains(e.target)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleOutsideClick);
+    
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleOutsideClick);
     };
   }, [showEmojiPicker]);
-
-  // Handle image selection
-  const handleImageChange = (e) => {
+  
+  // Handle image file selection
+  const handleImageSelect = (e) => {
     const file = e.target.files[0];
-    if (!file) {
-      setImage(null);
-      setImagePreview('');
-      return;
-    }
-
-    // Validate file type (only accept images)
-    if (!file.type.match('image.*')) {
-      setError('Only image files can be uploaded');
-      return;
-    }
-
-    // Validate file size (limit to 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Image size cannot exceed 2MB');
-      return;
-    }
-
-    setImage(file);
+    if (!file) return;
     
-    // Create preview
+    // Validate file type and size
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    
+    if (!validTypes.includes(file.type)) {
+      setError('Please select a valid image file (JPEG, PNG, GIF, WEBP)');
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image file is too large (max 5MB)');
+      return;
+    }
+    
+    setImage(file);
+    setError('');
+    
+    // Create preview URL
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
     };
     reader.readAsDataURL(file);
   };
-
+  
   // Remove selected image
   const removeImage = () => {
     setImage(null);
     setImagePreview('');
+  };
+  
+  // Handle emoji picker toggle
+  const toggleEmojiPicker = () => {
+    if (!showEmojiPicker) {
+      // Position emoji picker relative to button
+      const buttonRect = emojiButtonRef.current.getBoundingClientRect();
+      setEmojiPickerPosition({
+        top: buttonRect.bottom + window.scrollY,
+        left: Math.max(0, buttonRect.left - 250 + buttonRect.width / 2)
+      });
+    }
+    
+    setShowEmojiPicker(!showEmojiPicker);
+  };
+  
+  // Handle emoji selection
+  const onEmojiClick = (emojiData) => {
+    // 正确获取emoji并添加到评论中
+    const emoji = emojiData.emoji || emojiData.native || emojiData;
+    
+    // 检查ref是否存在
+    if (inputRef.current) {
+      // 获取光标位置
+      const cursorPosition = inputRef.current.selectionStart;
+      const textBeforeCursor = newComment.substring(0, cursorPosition);
+      const textAfterCursor = newComment.substring(cursorPosition);
+      
+      // 在光标位置插入emoji
+      const newText = textBeforeCursor + emoji + textAfterCursor;
+      setNewComment(newText);
+      
+      // 延迟设置光标位置到emoji之后
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          const newCursorPosition = cursorPosition + emoji.length;
+          inputRef.current.selectionStart = newCursorPosition;
+          inputRef.current.selectionEnd = newCursorPosition;
+        }
+      }, 10);
+    } else {
+      // 如果没有ref，直接添加到末尾
+      setNewComment(prev => prev + emoji);
+    }
+    
+    // 不要自动关闭emoji选择器
+    // setShowEmojiPicker(false);
+  };
+  
+  // Auto-resize text input
+  const handleInputChange = (e) => {
+    setNewComment(e.target.value);
+    
+    // Reset height to calculate scrollHeight correctly
+    e.target.style.height = 'auto';
+    
+    // Set new height based on content
+    const newHeight = Math.min(
+      Math.max(36, e.target.scrollHeight), 
+      200 // Max height
+    );
+    e.target.style.height = `${newHeight}px`;
   };
 
   // Handle new comment submission
@@ -236,180 +249,173 @@ function CommentSection({ postId, onCommentCountChange }) {
           
           // Exit loop after success
           return;
-        } catch (err) {
-          lastError = err;
-          console.error(`Comment submission failed, attempt ${attempt + 1}:`, err);
+        } catch (error) {
+          console.error(`Comment creation attempt ${attempt + 1} failed:`, error);
+          lastError = error;
+          attempt++;
           
-          // Check if it's a CORS or storage related error
-          if (err.message && (
-              err.message.includes('CORS') || 
-              err.message.includes('storage') ||
-              err.code === 'storage/unknown' ||
-              err.code === 'storage/retry-limit-exceeded' ||
-              err.code === 'storage/canceled'
-            )) {
-            // This could be a temporary error, can retry
-            attempt++;
-            // Wait before retrying
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-            // Continue loop
-            continue;
-          } else {
-            // Other types of errors directly throw
-            throw err;
-          }
+          // Small delay before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
       
-      // If retries fail
-      throw lastError || new Error('Comment submission failed, please try again later');
+      // If we get here, all attempts failed
+      throw lastError || new Error('Failed to create comment after multiple attempts');
     } catch (error) {
-      console.error("Error creating comment:", error);
-      
-      // Provide specific error information for different error types
-      if (error.code === 'storage/unauthorized') {
-        setError('You do not have permission to upload files, please check your login status.');
-      } else if (error.message && error.message.includes('CORS')) {
-        setError('Network request denied. Please contact the administrator to configure CORS settings, or try again later.');
-      } else if (error.code === 'storage/quota-exceeded') {
-        setError('Storage space is full, please contact the administrator.');
-      } else if (error.code === 'storage/invalid-format') {
-        setError('File format is incorrect, please upload a valid image file.');
-      } else {
-        setError('Comment submission failed, please try again later.');
-      }
+      console.error('Error submitting comment:', error);
+      setError('Failed to submit comment. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
+  
   // Handle comment deletion
   const handleDeleteComment = async (commentId) => {
-    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+    if (!commentId) return;
     
     try {
       setLoading(true);
-      
       await deleteComment(commentId);
       
-      // Remove comment from state
-      setComments(prev => prev.filter(comment => comment.id !== commentId));
+      // Update UI
+      setComments(prev => prev.filter(c => c.id !== commentId));
       
       // Update comment count
-      if (onCommentCountChange && comments?.length > 0) {
-        onCommentCountChange(comments.length - 1);
+      if (onCommentCountChange) {
+        onCommentCountChange((comments.length || 0) - 1);
       }
     } catch (error) {
-      console.error("Failed to delete comment:", error);
-      setError('Failed to delete comment, please try again later');
+      console.error('Error deleting comment:', error);
+      setError('Failed to delete comment. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  // Render emoji picker Portal
-  const renderEmojiPickerPortal = () => {
-    if (!showEmojiPicker) return null;
+  
+  // Format timestamp
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Just now';
     
-    return createPortal(
-      <div 
-        className="comment-emoji-picker"
-        ref={emojiPickerRef}
-        style={{
-          position: 'absolute',
-          top: emojiPickerPosition.top,
-          left: emojiPickerPosition.left,
-          zIndex: 1000
-        }}
-      >
-        <EmojiPicker 
-          onEmojiClick={handleEmojiClick}
-          width={320}
-          height={350}
-          searchDisabled={false}
-          skinTonesDisabled={true}
-          lazyLoadEmojis={true}
-          previewConfig={{ showPreview: false }}
-        />
-      </div>,
-      document.body
-    );
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      console.error('Error formatting timestamp:', error);
+      return 'Recently';
+    }
   };
-
+  
   return (
     <div className="comment-section">
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <div className="error-message">{error}</div>}
       
-      <form onSubmit={handleSubmit} className="comment-form">
-        <div className="comment-input-container">
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder={currentUser ? "Write a comment..." : "Please log in to comment"}
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="comment-input"
-            disabled={!currentUser || loading}
-            maxLength={200}
-          />
-          {currentUser && (
-            <div className="comment-tools">
-              <button
-                type="button"
-                className="comment-emoji-btn"
-                onClick={toggleEmojiPicker}
+      {currentUser ? (
+        <form className="comment-form" onSubmit={handleSubmit}>
+          <div className="comment-form-header">
+            {currentUser?.photoURL ? (
+              <img 
+                src={currentUser.photoURL} 
+                alt={currentUser.displayName || ''} 
+                className="comment-user-avatar" 
+              />
+            ) : (
+              <div className="comment-user-avatar-placeholder">
+                {currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'U'}
+              </div>
+            )}
+            
+            <div className="comment-input-wrapper">
+              <textarea
+                ref={inputRef}
+                className="comment-input"
+                placeholder="Write a comment..."
+                value={newComment}
+                onChange={handleInputChange}
                 disabled={loading}
-                ref={emojiButtonRef}
-              >
-                <FaSmile />
-              </button>
-              <div className="comment-image-upload">
-                <label htmlFor="comment-image" className="image-upload-label">
+              />
+              
+              <div className="comment-form-actions">
+                <button
+                  type="button"
+                  className="emoji-button"
+                  onClick={toggleEmojiPicker}
+                  ref={emojiButtonRef}
+                  disabled={loading}
+                >
+                  <FaSmile />
+                </button>
+                
+                <label className="image-button">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    disabled={loading}
+                    style={{ display: 'none' }}
+                  />
                   <FaCamera />
                 </label>
-                <input
-                  id="comment-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="image-upload-input"
-                  disabled={loading}
-                />
+                
+                <button
+                  type="submit"
+                  className="submit-button"
+                  disabled={loading || (!newComment.trim() && !image)}
+                >
+                  <FaPaperPlane />
+                </button>
               </div>
             </div>
-          )}
-          <button 
-            type="submit" 
-            className="comment-submit-btn"
-            disabled={!currentUser || loading || (!newComment.trim() && !image)}
-          >
-            <FaPaperPlane />
-          </button>
-        </div>
-        
-        {imagePreview && (
-          <div className="image-preview-container">
-            <img src={imagePreview} alt="Preview" className="image-preview" />
-            <button 
-              type="button" 
-              className="remove-image-btn" 
-              onClick={removeImage}
-              disabled={loading}
-            >
-              <FaTimes />
-            </button>
           </div>
-        )}
-      </form>
+          
+          {imagePreview && (
+            <div className="image-preview-container">
+              <img 
+                src={imagePreview}
+                alt="Selected"
+                className="comment-image-preview"
+              />
+              <button 
+                type="button" 
+                className="remove-image-btn"
+                onClick={removeImage}
+              >
+                <FaTimes />
+              </button>
+            </div>
+          )}
+        </form>
+      ) : (
+        <div className="login-prompt">
+          Please log in to leave a comment.
+        </div>
+      )}
       
-      {renderEmojiPickerPortal()}
+      {showEmojiPicker && createPortal(
+        <div 
+          className="emoji-picker-container"
+          style={{ top: `${emojiPickerPosition.top}px`, left: `${emojiPickerPosition.left}px` }}
+          ref={emojiPickerRef}
+        >
+          <EmojiPicker 
+            onEmojiClick={onEmojiClick} 
+            searchDisabled={false}
+            skinTonesDisabled={true}
+            width="320px"
+            height="350px"
+            previewConfig={{
+              showPreview: false
+            }}
+            lazyLoadEmojis={true}
+            theme="light"
+          />
+        </div>,
+        document.body
+      )}
       
       <div className="comments-list">
         {loading && comments.length === 0 ? (
-          <p className="comments-loading">Loading comments...</p>
-        ) : comments.length === 0 && !error ? (
-          <p className="no-comments">No comments yet. Be the first to comment!</p>
-        ) : (
+          <div className="comments-loading">Loading comments...</div>
+        ) : comments.length > 0 ? (
           comments.map(comment => (
             <div key={comment.id} className="comment-item">
               <div className="comment-header">
@@ -422,15 +428,15 @@ function CommentSection({ postId, onCommentCountChange }) {
                     />
                   ) : (
                     <div className="comment-avatar-placeholder">
-                      {comment.userName.charAt(0).toUpperCase()}
+                      {comment.userName ? comment.userName.charAt(0).toUpperCase() : 'U'}
                     </div>
                   )}
                   <div className="comment-content">
                     <div className="comment-meta">
-                      <span className="comment-username">{comment.userName}</span>
+                      <span className="comment-username">{comment.userName || 'User'}</span>
                       <span className="comment-time">{formatTimestamp(comment.createdAt)}</span>
                     </div>
-                    <p className="comment-text">{comment.content}</p>
+                    <p className="comment-text">{comment.content || comment.text}</p>
                     {comment.imageURL && (
                       <div className="comment-image-container">
                         <ImageRenderer 
@@ -457,6 +463,8 @@ function CommentSection({ postId, onCommentCountChange }) {
               </div>
             </div>
           ))
+        ) : (
+          <div className="no-comments">Be the first to comment!</div>
         )}
       </div>
     </div>

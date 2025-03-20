@@ -226,3 +226,95 @@ social-network/
 - [React Documentation](https://reactjs.org/)
 - [Firebase Documentation](https://firebase.google.com/docs)
 - [Firebase Hosting Guide](https://firebase.google.com/docs/hosting)
+
+# Social Network App Docker Guide
+
+## 先决条件
+
+- 安装 [Docker](https://www.docker.com/products/docker-desktop)
+- 确保您的计算机上已安装Node.js和npm（仅用于开发，非Docker部署不需要）
+
+## 构建Docker镜像
+
+1. 克隆此仓库
+
+```bash
+git clone <repository-url>
+cd social-network
+```
+
+2. 构建Docker镜像
+
+```bash
+docker build -t social-network-app .
+```
+
+该命令将创建一个包含应用程序的Docker镜像，标签为`social-network-app`。
+
+## 运行Docker容器
+
+构建镜像后，运行以下命令启动容器：
+
+```bash
+docker run -p 3000:80 -d --name social-network-container social-network-app
+```
+
+这将启动一个名为`social-network-container`的Docker容器，并将容器内的Nginx服务（端口80）映射到主机的3000端口。
+
+## 访问应用程序
+
+现在您可以通过浏览器访问以下URL来使用应用程序：
+
+```
+http://localhost:3000
+```
+
+## Docker命令参考
+
+- 停止容器：`docker stop social-network-container`
+- 启动已停止的容器：`docker start social-network-container`
+- 删除容器：`docker rm social-network-container`
+- 查看运行中的容器：`docker ps`
+- 查看日志：`docker logs social-network-container`
+- 删除镜像：`docker rmi social-network-app`
+
+## 开发注意事项
+
+### 环境变量
+
+应用程序需要以下环境变量才能正常工作：
+
+- `REACT_APP_FIREBASE_API_KEY`
+- `REACT_APP_FIREBASE_AUTH_DOMAIN`
+- `REACT_APP_FIREBASE_PROJECT_ID`
+- `REACT_APP_FIREBASE_STORAGE_BUCKET`
+- `REACT_APP_FIREBASE_MESSAGING_SENDER_ID`
+- `REACT_APP_FIREBASE_APP_ID`
+
+如需在生产环境使用正确的环境变量，请在构建镜像前修改`.env`文件。
+
+### .dockerignore文件
+
+为了减小镜像大小并提高构建速度，以下文件和目录不会被复制到Docker镜像中：
+
+```
+node_modules
+npm-debug.log
+build
+.git
+.github
+.gitignore
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+```
+
+## 技术栈
+
+- 前端：React.js
+- UI库：Material UI
+- 状态管理：React Context API
+- 后端服务：Firebase
+- 容器化：Docker
+- Web服务器：Nginx
