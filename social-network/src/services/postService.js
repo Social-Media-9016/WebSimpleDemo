@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { uploadImageToStorage, deleteImageFromStorage } from './firebaseStorageService';
+import { getUserProfile } from './userService';
 
 // Create a new post
 export const createPost = async (content, userId, userName, userPhotoURL = null, imageFile = null) => {
@@ -180,6 +181,100 @@ export const updateCommentCount = async (postId, increment = 1) => {
     return newCount;
   } catch (error) {
     console.error("Error updating comment count: ", error);
+    throw error;
+  }
+};
+
+// Add a comment to a post
+export const addComment = async (postId, commentData) => {
+  try {
+    if (!postId) throw new Error('Post ID is required');
+    if (!commentData.userId) throw new Error('User ID is required');
+    
+    console.log(`Adding comment to post: ${postId}`);
+    
+    // Get user profile to include in the comment
+    const userProfile = await getUserProfile(commentData.userId);
+    
+    // Create comment with user data
+    const comment = {
+      postId,
+      text: commentData.text,
+      content: commentData.text,
+      userId: commentData.userId,
+      author: userProfile?.displayName || 'User',
+      userName: userProfile?.displayName || 'User',
+      userPhotoURL: userProfile?.photoURL || null,
+      createdAt: serverTimestamp()
+    };
+    
+    // Add the comment to the database
+    const docRef = await addDoc(collection(db, 'comments'), comment);
+    
+    // Update the post's comment count
+    await updateCommentCount(postId, 1);
+    
+    // Return the comment with user data for immediate display
+    return {
+      id: docRef.id,
+      ...comment,
+      user: {
+        displayName: userProfile?.displayName || 'User',
+        photoURL: userProfile?.photoURL || null,
+        uid: commentData.userId
+      },
+      createdAt: new Date() // Use client timestamp for immediate display
+    };
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    throw error;
+  }
+};
+
+// Get comments for a post
+export const getComments = async (postId) => {
+  try {
+    if (!postId) throw new Error('Post ID is required');
+    
+    console.log(`Getting comments for post: ${postId}`);
+    
+    // Query comments for the post, sorted by creation time
+    const q = query(
+      collection(db, 'comments'),
+      where('postId', '==', postId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const comments = [];
+    
+    // Process each comment and fetch user data
+    for (const doc of querySnapshot.docs) {
+      const commentData = doc.data();
+      let userData = null;
+      
+      // Try to get user data for the comment
+      try {
+        userData = await getUserProfile(commentData.userId);
+      } catch (error) {
+        console.error(`Error fetching user for comment ${doc.id}:`, error);
+      }
+      
+      // Create comment object with user data
+      comments.push({
+        id: doc.id,
+        ...commentData,
+        user: userData ? {
+          displayName: userData.displayName || 'User',
+          photoURL: userData.photoURL || null,
+          uid: commentData.userId
+        } : null
+      });
+    }
+    
+    return comments;
+  } catch (error) {
+    console.error("Error getting comments:", error);
     throw error;
   }
 }; 

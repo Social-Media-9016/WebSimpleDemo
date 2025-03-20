@@ -62,21 +62,32 @@ export default function Post({ post, onDelete, onUpdate }) {
     }
   }, [commentText]);
 
-  // Load comments
+  // Load comments for a post
   const loadComments = async () => {
-    if (!showComments) {
-      try {
-        setLoading(true);
-        const fetchedComments = await getComments(post.id);
-        setComments(fetchedComments);
-        setShowComments(true);
-      } catch (error) {
-        console.error('Error loading comments:', error);
-      } finally {
-        setLoading(false);
+    try {
+      setLoading(true);
+      // Toggle comments visibility
+      const visible = !showComments;
+      setShowComments(visible);
+      
+      // If hiding comments or already loaded, no need to fetch
+      if (!visible || comments.length > 0) {
+        return;
       }
-    } else {
-      setShowComments(false);
+      
+      const commentData = await getComments(post.id);
+      
+      // Process comments to ensure user data is available
+      setComments(commentData);
+      
+      // Focus comment input if showing comments
+      if (visible && commentInputRef.current) {
+        commentInputRef.current.focus();
+      }
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,6 +122,12 @@ export default function Post({ post, onDelete, onUpdate }) {
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
+    
+    // Ensure user is logged in before submitting
+    if (!currentUser) {
+      console.error('User not logged in');
+      return;
+    }
 
     try {
       setLoading(true);

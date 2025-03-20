@@ -226,3 +226,95 @@ social-network/
 - [React Documentation](https://reactjs.org/)
 - [Firebase Documentation](https://firebase.google.com/docs)
 - [Firebase Hosting Guide](https://firebase.google.com/docs/hosting)
+
+# Social Network App Docker Guide
+
+## Prerequisites
+
+- Install [Docker](https://www.docker.com/products/docker-desktop)
+- Ensure Node.js and npm are installed on your computer (only for development, not needed for Docker deployment)
+
+## Building Docker Image
+
+1. Clone this repository
+
+```bash
+git clone <repository-url>
+cd social-network
+```
+
+2. Build Docker image
+
+```bash
+docker build -t social-network-app .
+```
+
+This command will create a Docker image containing the application, tagged as `social-network-app`.
+
+## Running Docker Container
+
+After building the image, run the following command to start the container:
+
+```bash
+docker run -p 3000:80 -d --name social-network-container social-network-app
+```
+
+This will start a Docker container named `social-network-container` and map the Nginx service (port 80) inside the container to port 3000 on the host.
+
+## Accessing the Application
+
+Now you can access the application through your browser at the following URL:
+
+```
+http://localhost:3000
+```
+
+## Docker Command Reference
+
+- Stop container: `docker stop social-network-container`
+- Start stopped container: `docker start social-network-container`
+- Remove container: `docker rm social-network-container`
+- View running containers: `docker ps`
+- View logs: `docker logs social-network-container`
+- Delete image: `docker rmi social-network-app`
+
+## Development Notes
+
+### Environment Variables
+
+The application requires the following environment variables to work properly:
+
+- `REACT_APP_FIREBASE_API_KEY`
+- `REACT_APP_FIREBASE_AUTH_DOMAIN`
+- `REACT_APP_FIREBASE_PROJECT_ID`
+- `REACT_APP_FIREBASE_STORAGE_BUCKET`
+- `REACT_APP_FIREBASE_MESSAGING_SENDER_ID`
+- `REACT_APP_FIREBASE_APP_ID`
+
+To use the correct environment variables in production, modify the `.env` file before building the image.
+
+### .dockerignore File
+
+To reduce image size and improve build speed, the following files and directories will not be copied to the Docker image:
+
+```
+node_modules
+npm-debug.log
+build
+.git
+.github
+.gitignore
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+```
+
+## Technology Stack
+
+- Frontend: React.js
+- UI Library: Material UI
+- State Management: React Context API
+- Backend Services: Firebase
+- Containerization: Docker
+- Web Server: Nginx
