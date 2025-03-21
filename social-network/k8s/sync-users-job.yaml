@@ -1,0 +1,98 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sync-users-to-postgres
+  labels:
+    app: social-network
+    component: data-sync
+spec:
+  ttlSecondsAfterFinished: 86400  # 自动清理24小时后完成的Job
+  template:
+    metadata:
+      labels:
+        app: social-network
+        component: data-sync
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: sync-users
+        image: ${WEB_SERVER_IMAGE}  # 使用与web-server相同的镜像
+        command: ["node", "server/src/scripts/sync-firebase-users.js"]
+        env:
+        - name: PG_HOST
+          value: "postgres-db-service"
+        - name: PG_PORT
+          value: "5432"
+        - name: PG_DATABASE
+          value: "social_network"
+        - name: PG_USER
+          value: "postgres"
+        - name: PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: password
+        - name: NODE_ENV
+          value: "production"
+        - name: SYNC_USERS_TO_POSTGRES
+          value: "true"
+        - name: SYNC_BATCH_SIZE
+          value: "100"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sync-users-cron
+  labels:
+    app: social-network
+    component: data-sync
+spec:
+  schedule: "0 * * * *"  # 每小时运行一次
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: social-network
+            component: data-sync
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: sync-users-cron
+            image: ${WEB_SERVER_IMAGE}  # 使用与web-server相同的镜像
+            command: ["node", "server/src/scripts/sync-firebase-users.js"]
+            env:
+            - name: PG_HOST
+              value: "postgres-db-service"
+            - name: PG_PORT
+              value: "5432"
+            - name: PG_DATABASE
+              value: "social_network"
+            - name: PG_USER
+              value: "postgres"
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: NODE_ENV
+              value: "production"
+            - name: SYNC_USERS_TO_POSTGRES
+              value: "true"
+            - name: SYNC_BATCH_SIZE
+              value: "100"
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi 
