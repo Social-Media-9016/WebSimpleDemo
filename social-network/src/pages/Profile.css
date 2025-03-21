@@ -142,4 +142,66 @@
   .bio-container {
     text-align: center;
   }
+}
+
+/* 添加管理员区域相关的样式 */
+.admin-section {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  border-left: 4px solid #3498db;
+}
+
+.admin-section h3 {
+  color: #2c3e50;
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+
+.postgres-status {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-left: 8px;
+}
+
+.status-ok {
+  background-color: #2ecc71;
+}
+
+.status-error {
+  background-color: #e74c3c;
+}
+
+.last-checked {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  margin: 5px 0;
+}
+
+.admin-actions {
+  margin-top: 15px;
+}
+
+.sync-status {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.btn-small {
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  margin-top: 5px;
 } 

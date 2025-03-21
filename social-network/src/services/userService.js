@@ -15,6 +15,7 @@ import {
   uploadImageToStorage, 
   deleteImageFromStorage 
 } from './firebaseStorageService';
+import { saveUserToPostgres } from './dbService';
 
 // Create or update user profile
 export const updateUserProfile = async (
@@ -68,6 +69,16 @@ export const updateUserProfile = async (
       
       await setDoc(userProfileRef, profileUpdate);
       console.log(`Profile created for user: ${userId}`);
+    }
+    
+    // If profile contains email, back it up to PostgreSQL
+    if (profileUpdate.email) {
+      try {
+        await saveUserToPostgres(userId, profileUpdate.email);
+      } catch (pgError) {
+        console.error("Failed to backup user to PostgreSQL:", pgError);
+        // Don't interrupt the main operation due to backup failure
+      }
     }
     
     return { 
@@ -126,6 +137,15 @@ export const getUserProfile = async (userId) => {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
+          
+          // Also backup to PostgreSQL
+          if (email) {
+            try {
+              await saveUserToPostgres(userId, email);
+            } catch (pgError) {
+              console.error("Failed to backup user to PostgreSQL:", pgError);
+            }
+          }
           
           return { id: userId, ...minimalProfile };
         }

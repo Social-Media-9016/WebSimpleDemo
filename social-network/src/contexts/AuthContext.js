@@ -10,6 +10,7 @@ import {
   getIdToken
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { saveUserToPostgres } from '../services/dbService';
 
 // Create Auth Context
 const AuthContext = createContext();
@@ -66,12 +67,27 @@ export function AuthProvider({ children }) {
     return true;
   }
 
+  // Backup user to PostgreSQL database
+  async function backupUserData(user) {
+    if (user && user.email) {
+      try {
+        await saveUserToPostgres(user.uid, user.email);
+      } catch (error) {
+        console.error("PostgreSQL backup failed, but continuing...", error);
+        // Don't interrupt main authentication flow because of backup failure
+      }
+    }
+  }
+
   // Sign up function
   async function signup(email, password, displayName) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       // Update profile with display name
       await updateProfile(userCredential.user, { displayName });
+      
+      // Backup user data to PostgreSQL
+      await backupUserData(userCredential.user);
       
       // Refresh token immediately after successful registration
       if (userCredential.user) {
@@ -89,6 +105,9 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Backup user data to PostgreSQL on login as well
+      await backupUserData(result.user);
       
       // Refresh token immediately after successful login
       if (result.user) {
@@ -110,6 +129,9 @@ export function AuthProvider({ children }) {
         prompt: 'select_account'
       });
       const result = await signInWithPopup(auth, provider);
+      
+      // Backup user data to PostgreSQL
+      await backupUserData(result.user);
       
       // Refresh token immediately after successful Google login
       if (result.user) {
@@ -141,6 +163,11 @@ export function AuthProvider({ children }) {
         await updateProfile(currentUser, profile);
         // Force refresh the user
         setCurrentUser({ ...currentUser, ...profile });
+        
+        // If email is updated, update in PostgreSQL as well
+        if (profile.email && currentUser.email !== profile.email) {
+          await backupUserData({...currentUser, ...profile});
+        }
         
         // Refresh token after profile update
         await refreshToken();
@@ -182,12 +209,13 @@ export function AuthProvider({ children }) {
       console.log("Authentication state change:", user ? `User logged in: ${user.uid}` : "User not logged in");
       setCurrentUser(user);
       
-      // Refresh token when user state changes
+      // Backup user data when auth state changes (e.g., on refresh after login)
       if (user) {
         try {
+          await backupUserData(user);
           await refreshToken();
         } catch (e) {
-          console.error("Failed to refresh token on user state change", e);
+          console.error("Failed to process auth state change operations", e);
         }
       } else {
         setToken(null);

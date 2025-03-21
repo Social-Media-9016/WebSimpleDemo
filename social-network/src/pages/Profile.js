@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserProfile, updateUserProfile } from '../services/userService';
 import { getPostsByUser } from '../services/postService';
+import { syncUsersToPostgres } from '../services/syncService';
+import usePostgresStatus from '../hooks/usePostgresStatus';
 import PostItem from '../components/PostItem';
 import './Profile.css';
+
+// Admin user email list (in a real application, this should be read from database or configuration)
+const ADMIN_EMAILS = ['admin@example.com', 'test@test.com']; // Replace with actual admin emails
 
 function Profile() {
   const { currentUser } = useAuth();
@@ -13,6 +18,17 @@ function Profile() {
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [bio, setBio] = useState('');
+  const [syncStatus, setSyncStatus] = useState({
+    syncing: false,
+    message: '',
+    success: null
+  });
+  
+  // Use custom hook to check PostgreSQL connection status
+  const pgStatus = usePostgresStatus();
+  
+  // Check if current user is an admin
+  const isAdmin = ADMIN_EMAILS.includes(currentUser?.email);
 
   // Load user profile and posts
   useEffect(() => {
@@ -62,6 +78,39 @@ function Profile() {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Manually trigger user data sync (admin only)
+  const handleSyncUsers = async () => {
+    if (!isAdmin) {
+      setError('Only administrators can sync user data');
+      return;
+    }
+    
+    try {
+      setSyncStatus({
+        syncing: true,
+        message: 'Syncing users to PostgreSQL...',
+        success: null
+      });
+      
+      const result = await syncUsersToPostgres();
+      
+      setSyncStatus({
+        syncing: false,
+        message: result.message,
+        success: result.success
+      });
+      
+      // Refresh PostgreSQL connection status after sync
+      await pgStatus.refreshStatus();
+    } catch (error) {
+      setSyncStatus({
+        syncing: false,
+        message: `Sync failed: ${error.message}`,
+        success: false
+      });
     }
   };
 
@@ -148,22 +197,63 @@ function Profile() {
         </div>
       </div>
       
-      <div className="profile-posts-section">
-        <h3>Your Posts</h3>
-        
-        {userPosts.length === 0 ? (
-          <div className="no-posts">You haven't created any posts yet.</div>
-        ) : (
-          <div className="profile-posts-list">
-            {userPosts.map(post => (
-              <PostItem 
-                key={post.id} 
-                post={post} 
-                onUpdate={handlePostUpdate}
-                onDelete={handlePostDelete}
-              />
-            ))}
+      {/* Admin database sync area */}
+      {isAdmin && (
+        <div className="admin-section">
+          <h3>Database Administration</h3>
+          
+          <div className="postgres-status">
+            <p>
+              <strong>PostgreSQL Status:</strong> {pgStatus.isChecking ? 'Checking...' : pgStatus.message}
+              <span className={`status-indicator ${pgStatus.isConnected ? 'status-ok' : 'status-error'}`}></span>
+            </p>
+            {pgStatus.lastChecked && (
+              <p className="last-checked">
+                Last checked: {pgStatus.lastChecked.toLocaleTimeString()}
+              </p>
+            )}
+            <button 
+              className="btn btn-small" 
+              onClick={pgStatus.refreshStatus}
+              disabled={pgStatus.isChecking}
+            >
+              Refresh Status
+            </button>
           </div>
+          
+          <div className="admin-actions">
+            <button 
+              className="btn btn-primary" 
+              onClick={handleSyncUsers} 
+              disabled={syncStatus.syncing || !pgStatus.isConnected}
+            >
+              {syncStatus.syncing ? 'Syncing...' : 'Sync Users to PostgreSQL'}
+            </button>
+            
+            {syncStatus.message && (
+              <div className={`sync-status ${syncStatus.success ? 'status-ok' : 'status-error'}`}>
+                {syncStatus.message}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <h3 className="profile-posts-heading">Your Posts</h3>
+      
+      <div className="profile-posts">
+        {userPosts.length > 0 ? (
+          userPosts.map((post) => (
+            <PostItem 
+              key={post.id} 
+              post={post} 
+              currentUser={currentUser}
+              onPostUpdate={handlePostUpdate}
+              onPostDelete={handlePostDelete}
+            />
+          ))
+        ) : (
+          <p className="no-posts-message">You haven't created any posts yet.</p>
         )}
       </div>
     </div>
