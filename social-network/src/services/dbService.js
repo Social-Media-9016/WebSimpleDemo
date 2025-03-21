@@ -1,26 +1,28 @@
-// 在浏览器环境中使用模拟的PostgreSQL客户端
-// 不再尝试实际导入pg模块，而是直接使用模拟实现
+// Use mock PostgreSQL client in browser environment
+// Do not attempt to import pg module, use mock implementation directly
+
+// Define a Pool constructor that returns a mock pool
 const Pool = function() {
-  // 直接返回完整的池对象，包含所有需要的方法
+  // Return complete pool object with all required methods
   const mockPool = {
     query: async () => { 
-      console.log('模拟PostgreSQL查询');
+      console.log('Mock PostgreSQL query');
       return { rows: [], rowCount: 0 };
     },
     on: (event, callback) => {
-      console.log(`模拟监听PostgreSQL事件: ${event}`);
-      // 如果是connect事件，立即执行回调以模拟连接成功
+      console.log(`Mock PostgreSQL event listener: ${event}`);
+      // If it's a connect event, execute callback immediately to simulate successful connection
       if (event === 'connect' && typeof callback === 'function') {
         setTimeout(callback, 0);
       }
       return mockPool;
     },
     end: async () => {
-      console.log('模拟关闭PostgreSQL连接池');
+      console.log('Mock closing PostgreSQL connection pool');
       return Promise.resolve();
     },
     connect: async () => {
-      console.log('模拟获取PostgreSQL客户端连接');
+      console.log('Mock getting PostgreSQL client connection');
       return {
         query: async () => ({ rows: [], rowCount: 0 }),
         release: () => {},
@@ -28,6 +30,7 @@ const Pool = function() {
       };
     }
   };
+  
   return mockPool;
 };
 
@@ -47,11 +50,11 @@ const pgConfig = {
 
 // Create connection pool - always use mock pool in browser
 const pool = new Pool(pgConfig);
-console.log('模拟PostgreSQL连接池已初始化');
+console.log('Mock PostgreSQL pool initialized');
 
 // Initialize connection (will be handled by the mock)
 pool.on('connect', () => {
-  console.log('模拟连接到PostgreSQL数据库');
+  console.log('Mock connecting to PostgreSQL database');
 });
 
 // Maximum number of retries

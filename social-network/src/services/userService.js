@@ -81,7 +81,7 @@ export const updateUserProfile = async (
       console.log(`Profile created for user: ${userId}`);
     }
     
-    // 如果资料包含邮箱，通过API同步到后端
+    // If the profile contains an email, sync it to the backend via API
     if (profileUpdate.email) {
       try {
         await userApi.saveUser({
@@ -89,8 +89,8 @@ export const updateUserProfile = async (
           email: profileUpdate.email
         });
       } catch (apiError) {
-        console.error("同步用户到后端API失败:", apiError);
-        // 不中断主操作
+        console.error("Failed to sync user to backend API:", apiError);
+        // Do not interrupt the main operation
       }
     }
     
@@ -178,7 +178,7 @@ export const getUserProfile = async (userId) => {
             updatedAt: serverTimestamp()
           });
           
-          // 同步到后端
+          // Sync to backend
           if (email) {
             try {
               await userApi.saveUser({
@@ -186,7 +186,7 @@ export const getUserProfile = async (userId) => {
                 email: email
               });
             } catch (apiError) {
-              console.error("同步用户到后端API失败:", apiError);
+              console.error("Failed to sync user to backend API:", apiError);
             }
           }
           
@@ -251,18 +251,18 @@ export const searchUsers = async (query, limit = 10) => {
 };
 
 /**
- * 创建新用户
- * @param {string} email - 用户邮箱
- * @param {string} password - 用户密码
- * @returns {Promise<object>} - 新创建的用户
+ * Create a new user
+ * @param {string} email - User email
+ * @param {string} password - User password
+ * @returns {Promise<object>} - Newly created user
  */
 export const createUser = async (email, password) => {
   try {
-    // 使用Firebase创建用户
+    // Use Firebase to create a user
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
-    // 初始化Firestore中的用户资料
+    // Initialize user profile in Firestore
     await setDoc(doc(db, 'users', user.uid), {
       email: user.email,
       displayName: '',
@@ -272,61 +272,61 @@ export const createUser = async (email, password) => {
       updatedAt: new Date()
     });
     
-    // 使用API将用户同步到后端
+    // Sync user to backend via API
     try {
       await userApi.saveUser({
         id: user.uid,
         email: user.email
       });
     } catch (apiError) {
-      console.error('同步用户到后端失败:', apiError);
-      // 不阻止用户创建流程继续
+      console.error('Failed to sync user to backend:', apiError);
+      // Do not block the user creation process from continuing
     }
     
-    // 发送验证邮件
+    // Send verification email
     await sendEmailVerification(user);
     
     return user;
   } catch (error) {
-    console.error('创建用户时出错:', error);
+    console.error('Failed to create user:', error);
     throw error;
   }
 };
 
 /**
- * 用户登录
- * @param {string} email - 用户邮箱
- * @param {string} password - 用户密码
- * @returns {Promise<object>} - 登录的用户
+ * User login
+ * @param {string} email - User email
+ * @param {string} password - User password
+ * @returns {Promise<object>} - Logged in user
  */
 export const loginUser = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (error) {
-    console.error('用户登录时出错:', error);
+    console.error('Failed to login user:', error);
     throw error;
   }
 };
 
 /**
- * 用户登出
+ * User logout
  * @returns {Promise<void>}
  */
 export const logoutUser = async () => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error('用户登出时出错:', error);
+    console.error('Failed to logout user:', error);
     throw error;
   }
 };
 
 /**
- * 上传用户头像
- * @param {string} userId - 用户ID
- * @param {File} imageFile - 图片文件
- * @returns {Promise<string>} - 头像URL
+ * Upload user avatar
+ * @param {string} userId - User ID
+ * @param {File} imageFile - Image file
+ * @returns {Promise<string>} - Avatar URL
  */
 export const uploadUserAvatar = async (userId, imageFile) => {
   try {
@@ -334,16 +334,16 @@ export const uploadUserAvatar = async (userId, imageFile) => {
     const fileName = `avatars/${userId}_${uuidv4()}.${fileExtension}`;
     const avatarRef = ref(storage, fileName);
     
-    // 上传文件
+    // Upload file
     await uploadBytes(avatarRef, imageFile);
     
-    // 获取URL
+    // Get URL
     const downloadURL = await getDownloadURL(avatarRef);
     
-    // 更新用户资料
+    // Update user profile
     await updateUserProfile(userId, { photoURL: downloadURL });
     
-    // 如果为当前用户，也更新Auth资料
+    // If current user, also update Auth profile
     if (auth.currentUser && auth.currentUser.uid === userId) {
       await updateProfile(auth.currentUser, {
         photoURL: downloadURL
@@ -352,21 +352,21 @@ export const uploadUserAvatar = async (userId, imageFile) => {
     
     return downloadURL;
   } catch (error) {
-    console.error('上传用户头像时出错:', error);
+    console.error('Failed to upload user avatar:', error);
     throw error;
   }
 };
 
 /**
- * 发送密码重置邮件
- * @param {string} email - 用户邮箱
+ * Send password reset email
+ * @param {string} email - User email
  * @returns {Promise<void>}
  */
 export const resetPassword = async (email) => {
   try {
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
-    console.error('发送密码重置邮件时出错:', error);
+    console.error('Failed to send password reset email:', error);
     throw error;
   }
 }; 
