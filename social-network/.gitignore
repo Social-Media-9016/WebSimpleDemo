@@ -7,9 +7,12 @@
 
 # testing
 /coverage
+/cypress/videos
+/cypress/screenshots
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
@@ -17,7 +20,61 @@
 .env.development.local
 .env.test.local
 .env.production.local
+.env
+.env.docker
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+logs
+*.log
+
+# IDE and editors
+/.idea
+/.vscode
+*.swp
+*.swo
+.DS_Store
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# operating system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# cache
+.npm
+.eslintcache
+.stylelintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+.firebaserc
+
+# Docker
+.dockerignore
+*.tar
+
+# backup files
+*.bak
+*.backup
+*~
+
+# temporary files
+*.tmp
+temp/
+.cache/
+
+# project-specific ignores
+# add as needed for your project
+/server/config/serviceAccountKey.json
