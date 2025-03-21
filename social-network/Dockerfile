@@ -9,69 +9,85 @@ RUN apk add --no-cache python3 make g++
 # 复制package文件
 COPY package*.json ./
 
-# 安装依赖（保留pg模块引用但后面会替换为mock）
-RUN npm ci
+# 创建临时package.json，将pg模块标记为可选依赖
+RUN cp package.json package.json.orig && \
+    cat package.json | sed 's/"pg": "\(.*\)"/"pg": "\1", "optional": true/g' > package.json.tmp && \
+    mv package.json.tmp package.json
 
-# 创建PG模块的mock实现
+# 安装依赖但忽略可选依赖（包括pg）
+RUN npm ci --ignore-scripts --omit=optional
+
+# 创建mock pg模块以满足导入需求
 RUN mkdir -p node_modules/pg/lib
-RUN echo 'module.exports = { Pool: function() { return { query: function() { return Promise.resolve([]); } } } };' > node_modules/pg/index.js
-RUN echo 'module.exports = { Client: function() { return { connect: function() {}, query: function() { return Promise.resolve([]); } } } };' > node_modules/pg/lib/index.js
-
-# 创建DNS模块的mock实现
-RUN mkdir -p src/mock/dns
-RUN echo 'module.exports = {}; module.exports.default = {};' > src/mock/dns/index.js
-RUN echo '{ "name": "dns", "version": "3.1.0", "private": true }' > src/mock/dns/package.json
+RUN echo 'module.exports = { Pool: function() { return { query: () => Promise.resolve({ rows: [], rowCount: 0 }) }; } };' > node_modules/pg/index.js
+RUN echo 'module.exports = { Client: function() { return { connect: () => {}, query: () => Promise.resolve({ rows: [], rowCount: 0 }) }; } };' > node_modules/pg/lib/index.js
 
 # 复制前端代码
 COPY . .
 
-# 创建mock服务目录，确保services/dbService.js存在可用的模拟实现
-RUN mkdir -p src/services
-RUN if [ -f src/services/dbService.js ]; then \
-      sed -i 's/require(["\x27]pg["\x27])/require(\"..\/..\/.mock\/pg\")/g' src/services/dbService.js; \
-      sed -i 's/import.*from ["\x27]pg["\x27]/import { Pool } from \"..\/..\/.mock\/pg\"/g' src/services/dbService.js; \
-    else \
-      echo 'export const db = { query: () => Promise.resolve([]) };' > src/services/dbService.js; \
-    fi
-
-# 创建pg模块的全局mock
-RUN mkdir -p .mock/pg
-RUN echo 'export const Pool = function() { return { query: () => Promise.resolve([]) }; };' > .mock/pg/index.js
-
-# 创建webpack配置以解决扩展名问题
-RUN if [ ! -f webpack.config.js ]; then \
-      echo "const path = require('path'); \
-      module.exports = { \
-        resolve: { \
-          extensions: ['.js', '.jsx', '.ts', '.tsx'], \
-          alias: { \
-            'pg': path.resolve(__dirname, '.mock/pg') \
-          }, \
-          fallback: { \
-            net: false, \
-            tls: false, \
-            fs: false, \
-            path: false, \
-            dns: false, \
-            os: false \
-          } \
-        } \
-      };" > webpack.config.js; \
-    else \
-      sed -i '/resolve:/d; /extensions:/d; /fallback:/d; /alias:/d' webpack.config.js && \
-      sed -i '/module.exports/a \ \ resolve: { \n    extensions: [\".js\", \".jsx\", \".ts\", \".tsx\"], \n    alias: { \n      \"pg\": path.resolve(__dirname, \".mock/pg\") \n    }, \n    fallback: { \n      net: false, \n      tls: false, \n      fs: false, \n      path: false, \n      dns: false, \n      os: false \n    } \n  },' webpack.config.js; \
-    fi
-
-# 创建环境变量文件
+# 创建生产环境变量文件，标记前端不使用PG
 RUN echo "REACT_APP_PG_ENABLED=false" > .env.production
+RUN echo "REACT_APP_API_URL=http://backend-service" >> .env.production
+
+# 创建webpack配置
+RUN echo "const path = require('path'); \
+module.exports = { \
+  resolve: { \
+    extensions: ['.js', '.jsx', '.ts', '.tsx'], \
+    fallback: { \
+      net: false, \
+      tls: false, \
+      fs: false, \
+      path: false, \
+      dns: false, \
+      os: false, \
+      crypto: false, \
+      stream: false, \
+      util: false, \
+      buffer: false \
+    } \
+  } \
+};" > webpack.config.js
+
+# 设置环境变量
 ENV NODE_ENV=production
 ENV GENERATE_SOURCEMAP=false
 
 # 构建React应用
 RUN npm run build
 
-# 生产镜像
-FROM nginx:alpine
+# 后端构建阶段（可选，如果有单独的后端服务）
+FROM node:16-alpine as backend
+
+WORKDIR /app
+
+# 安装postgresql客户端和构建工具
+RUN apk add --no-cache postgresql-client python3 make g++
+
+# 复制package文件
+COPY package*.json ./
+
+# 安装所有依赖
+RUN npm ci
+
+# 复制后端代码
+COPY ./server ./server
+COPY ./src/services ./src/services
+COPY ./src/config ./src/config
+
+# 设置PostgreSQL环境变量
+ENV PG_HOST=postgres-db
+ENV PG_PORT=5432
+ENV PG_DATABASE=social_network
+ENV PG_USER=postgres
+ENV PG_PASSWORD=postgres
+ENV PG_ENABLED=true
+
+# 最终前端镜像
+FROM nginx:alpine as frontend
+
+# 安装curl用于健康检查
+RUN apk add --no-cache curl
 
 # 创建Nginx缓存目录
 RUN mkdir -p /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp \
@@ -84,13 +100,16 @@ RUN rm -rf /usr/share/nginx/html/*
 # 复制静态文件
 COPY --from=build /app/build /usr/share/nginx/html
 
+# 复制nginx配置，添加反向代理到后端
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # 设置正确的权限
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chmod -R 755 /usr/share/nginx/html
 
 # 添加健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -q --spider http://localhost/ || exit 1
+  CMD curl -f http://localhost/ || exit 1
 
 # 暴露端口
 EXPOSE 80

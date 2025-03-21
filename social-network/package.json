@@ -1,5 +1,5 @@
 {
-  "name": "social-network",
+  "name": "social-network-frontend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -15,7 +15,6 @@
     "date-fns": "^4.1.0",
     "emoji-picker-react": "^4.12.2",
     "firebase": "^11.4.0",
-    "pg": "^8.14.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-firebase-hooks": "^5.1.1",
@@ -48,5 +47,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "proxy": "http://localhost:3001"
 }

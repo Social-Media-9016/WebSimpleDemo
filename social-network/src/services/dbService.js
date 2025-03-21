@@ -1,4 +1,35 @@
-import { Pool } from 'pg';
+// 在浏览器环境中使用模拟的PostgreSQL客户端
+// 不再尝试实际导入pg模块，而是直接使用模拟实现
+const Pool = function() {
+  // 直接返回完整的池对象，包含所有需要的方法
+  const mockPool = {
+    query: async () => { 
+      console.log('模拟PostgreSQL查询');
+      return { rows: [], rowCount: 0 };
+    },
+    on: (event, callback) => {
+      console.log(`模拟监听PostgreSQL事件: ${event}`);
+      // 如果是connect事件，立即执行回调以模拟连接成功
+      if (event === 'connect' && typeof callback === 'function') {
+        setTimeout(callback, 0);
+      }
+      return mockPool;
+    },
+    end: async () => {
+      console.log('模拟关闭PostgreSQL连接池');
+      return Promise.resolve();
+    },
+    connect: async () => {
+      console.log('模拟获取PostgreSQL客户端连接');
+      return {
+        query: async () => ({ rows: [], rowCount: 0 }),
+        release: () => {},
+        on: () => {}
+      };
+    }
+  };
+  return mockPool;
+};
 
 // PostgreSQL connection configuration
 const pgConfig = {
@@ -14,27 +45,13 @@ const pgConfig = {
   statement_timeout: 5000, // Query timeout
 };
 
-// Create connection pool
-let pool;
-try {
-  pool = new Pool(pgConfig);
-  console.log('PostgreSQL connection pool initialized');
-} catch (error) {
-  console.error('Failed to initialize PostgreSQL connection pool:', error);
-  // Create an empty mock pool if initialization fails
-  pool = {
-    query: async () => { throw new Error('PostgreSQL connection not available'); },
-    on: () => {}
-  };
-}
+// Create connection pool - always use mock pool in browser
+const pool = new Pool(pgConfig);
+console.log('模拟PostgreSQL连接池已初始化');
 
-// Initialize connection
+// Initialize connection (will be handled by the mock)
 pool.on('connect', () => {
-  console.log('Connected to PostgreSQL database');
-});
-
-pool.on('error', (err) => {
-  console.error('PostgreSQL connection error:', err);
+  console.log('模拟连接到PostgreSQL数据库');
 });
 
 // Maximum number of retries
