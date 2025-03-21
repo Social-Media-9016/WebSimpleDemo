@@ -16,17 +16,23 @@ COPY . .
 # Build React application
 RUN npm run build
 
-# Second stage - use Nginx to serve static content
-FROM nginx:alpine
+# 使用同一个镜像提供API服务和静态资源
+FROM node:14-alpine
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 设置工作目录
+WORKDIR /app
 
-# Copy built files from build stage
-COPY --from=build /app/build /usr/share/nginx/html
+# 复制package.json和依赖
+COPY package*.json ./
+RUN npm install --production
 
-# Expose port 80
-EXPOSE 80
+# 复制服务器代码
+COPY server ./server
+# 复制构建后的React应用
+COPY --from=build /app/build ./build
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# 暴露端口
+EXPOSE 3001
+
+# 启动命令
+CMD ["npm", "run", "server"]

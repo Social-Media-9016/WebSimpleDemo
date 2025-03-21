@@ -10,6 +10,7 @@ import {
   getIdToken
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { saveUserToPostgres } from '../services/postgresService';
 
 // Create Auth Context
 const AuthContext = createContext();
@@ -73,6 +74,15 @@ export function AuthProvider({ children }) {
       // Update profile with display name
       await updateProfile(userCredential.user, { displayName });
       
+      // 保存用户数据到PostgreSQL
+      if (userCredential.user) {
+        try {
+          await saveUserToPostgres(userCredential.user.uid, email);
+        } catch (pgError) {
+          console.error("保存用户到PostgreSQL失败，但继续流程:", pgError);
+        }
+      }
+      
       // Refresh token immediately after successful registration
       if (userCredential.user) {
         await refreshToken();
@@ -110,6 +120,15 @@ export function AuthProvider({ children }) {
         prompt: 'select_account'
       });
       const result = await signInWithPopup(auth, provider);
+      
+      // 保存Google登录用户数据到PostgreSQL
+      if (result.user) {
+        try {
+          await saveUserToPostgres(result.user.uid, result.user.email);
+        } catch (pgError) {
+          console.error("保存Google用户到PostgreSQL失败，但继续流程:", pgError);
+        }
+      }
       
       // Refresh token immediately after successful Google login
       if (result.user) {
